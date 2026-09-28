@@ -12,7 +12,6 @@ class ContactORM(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     phone: Mapped[str | None] = mapped_column(String(15), nullable=True)
     ext: Mapped[str | None] = mapped_column(String(5), nullable=True)
-    email: Mapped[str | None] = mapped_column(String(60), nullable=True)
 
     id_destinatario: Mapped[int] = mapped_column(
         Integer,

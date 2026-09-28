@@ -39,6 +39,7 @@ class ReceiverORM(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, index=True)
     tipo_entidad: Mapped[str] = mapped_column(SQLEnum(EntidadesEnum, name="entidades_enum"), nullable=False)
     full_name: Mapped[str] = mapped_column(String(70), nullable=False)
+    email: Mapped[str | None] = mapped_column(String(70), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(timezone.utc), nullable=False)
 
     title_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("titles.id", ondelete="SET NULL"), nullable=True)
@@ -60,7 +61,7 @@ class ReceiverORM(Base):
     volantes: Mapped[list["VolanteORM"]] = relationship(
         secondary="receiver_volante",
         back_populates="receivers",
-        lazy="selectin",
+        lazy="select",
         passive_deletes=True,
     )
 
