@@ -1,0 +1,13 @@
+.venv/
+.idea/
+
+__pycache__/
+*.py[cod]
+*.pyo
+alembic/versions/__pycache__/
+
+.env.*
+*.env
+
+tmp/
+temp/
