@@ -1,52 +1,154 @@
+from datetime import timezone
+
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
+from zoneinfo import ZoneInfo
+from app.core.db import Base, engine, SessionLocal
+from app.models import (ReceiverORM, JobRoleORM, TitleORM, PositionORM,
+                        OrganizationORM, AddressORM, EntidadesEnum, ContactORM,
+                        VolanteORM)
 
 from app.models import UserORM, users_roles, RoleORM, NameRole, RegisterORM, Sede
-from app.core.db import Base, SessionLocal, engine
 
 if __name__ == '__main__':
     Base.metadata.create_all(engine)
 
     with SessionLocal() as session:
         try:
-            user = session.get(UserORM, 1)
-            session.delete(user)
+            # Reutilizamos el titulo que ya existe en la BD
+            titulo = session.execute(
+                select(TitleORM).where(TitleORM.abreviatura == "C.P.")
+            ).scalar_one_or_none()
+
+            # Cargo y dependencia nuevos (gubernamentales)
+            cargo_tesorero = JobRoleORM(
+                abreviatura="PDTE. DE LA MESA DIRECTIVA",
+                significado="Presidente de la Mesa Directiva"
+            )
+            municipio_durango_capital = OrganizationORM(
+                name="CONGRESO DEL ESTADO DE TABASCO",
+                state="TABASCO"
+            )
+
+            # Puesto nuevo (cargo + dependencia)
+            puesto_tesoreria = PositionORM(
+                job_role=cargo_tesorero,
+                organization=municipio_durango_capital
+            )
+
+            # Destinatario nuevo, mismo titulo
+            destinatario = ReceiverORM(
+                tipo_entidad=EntidadesEnum.PERSONA,
+                full_name="JORGE ALBERTO CASTILLO REYES",
+                email="mesa_directiva_pdte@durango.gob.mx",
+                titulo=titulo,
+                position=puesto_tesoreria
+            )
+
+            # Domicilio diferente
+            domicilio = AddressORM(
+                street="CALLE 5 DE FEBRERO",
+                num_street="800",
+                colony="ZONA CENTRO",
+                state="TABASCO",
+                postal_code="34000",
+                city="TABASCO",
+                country="MEXICO",
+                address_reference="PALACIO MUNICIPAL, TESORERIA"
+            )
+            destinatario.addresses.append(domicilio)
+
+            # Contacto diferente
+            contacto = ContactORM(
+                phone="6181375000",
+                ext="2401"
+            )
+            destinatario.contacts.append(contacto)
+
+            session.add(destinatario)
             session.commit()
-            # role_new_1 = RoleORM(name=NameRole.ADMIN)
-            # role_new_2 = RoleORM(name=NameRole.OPERATOR)
-            # role_new_3 = RoleORM(name=NameRole.CLIENT)
-            #
-            # session.add_all([role_new_1, role_new_2, role_new_3])
-            # session.flush()
-            #
-            # user_new = UserORM(name="alfredo", email="alfredo1@gmail.com", password_hash="holamundo123", is_active=True)
-            # user_new.roles.extend([role_new_1, role_new_2])
-            #
-            # register_new = RegisterORM(sede=Sede.AJUSCO, image_name="imagen1",
-            #                            raw_receiver="MTRA. MIREYLI MARÍA WILSON ARIAS TITULAR DE LA SECRETARÍA ANTICORRUPCIÓN Y BUEN GOBIERNO DEL ESTADO DE TABASCO. AV. PASEO TABASCO #1504 COL. TABASCO 2000, C.P. 86035 VILAHERMOSA, TABASCO, MÉXICO.",
-            #                            full_name="MTRA. MIREYLI MARÍA WILSON ARIAS",
-            #                            position_dependency="TITULAR DE LA SECRETARÍA ANTICORRUPCIÓN Y BUEN GOBIERNO DEL ESTADO DE TABASCO.",
-            #                            address="AV. PASEO TABASCO #1504",
-            #                            colony="TABASCO 2000",
-            #                            municipality="VILAHERMOSA",
-            #                            state="TABASCO",
-            #                            postal_code="86035",
-            #                            number_volante="VCS-26-131000-00122",
-            #                            contact="TEL. (444) 494 05 68",
-            #                            instructions="ENTRE AVENIDA LUIS DONALDO COLOSIO Y PRIVADA",
-            #                            ai_notes="SIN OBSERVACIONES",
-            #                            crop_x=1, crop_y=1, crop_w=1, crop_h=1, rotation_deg=90,
-            #                            aspect_mode="FREE",
-            #                            created_by_user=user_new
-            #                            )
-            #
-            # session.add_all([user_new, register_new])
-            # session.commit()
+            session.refresh(destinatario)
+
+            print(
+                f"destinatario: {destinatario.id} {destinatario.titulo.abreviatura} {destinatario.full_name}"
+                f"\ncargo: {destinatario.position.job_role.abreviatura}"
+                f"\ndependencia: {destinatario.position.organization.name}"
+                f"\ndomicilio: {domicilio.street} {domicilio.num_street}, {domicilio.colony}, {domicilio.city}"
+                f"\ncontacto: {contacto.phone} ext. {contacto.ext}"
+            )
+
         except SQLAlchemyError as e:
             session.rollback()
             print(e)
+            print(e.code)
+            print(e.args[0])
+            print(e.__class__.__name__)
 
-
-
-
-
-
+            # Titulo
+            # titulo = TitleORM(
+            #     abreviatura="C.P.",
+            #     significado="Contador Público o Contadora Pública"
+            # )
+            #
+            # # Cargo y dependencia
+            # cargo_presidente = JobRoleORM(
+            #     abreviatura="PDTE. MUNICIPAL",
+            #     significado="Presidente Municipal"
+            # )
+            # municipio_durango = OrganizationORM(
+            #     name="MUNICIPIO DE PUEBLO NUEVO",
+            #     state="DURANGO"
+            # )
+            #
+            # # Puesto (cargo + dependencia)
+            # puesto_durango = PositionORM(
+            #     job_role=cargo_presidente,
+            #     organization=municipio_durango
+            # )
+            #
+            # # Destinatario
+            # destinatario = ReceiverORM(
+            #     tipo_entidad=EntidadesEnum.PERSONA,
+            #     full_name="ADAIR HERNANDEZ MARTINEZ",
+            #     email="presidencia@pueblonuevo.gob.mx",
+            #     titulo=titulo,
+            #     position=puesto_durango
+            # )
+            #
+            # # Domicilio
+            # domicilio = AddressORM(
+            #     street="C. AV. CHIAPAS",
+            #     num_street="514",
+            #     colony="RAMON FARIAS",
+            #     state="DURANGO",
+            #     postal_code="34950",
+            #     city="PUEBLO NUEVO",
+            #     country="MEXICO",
+            #     address_reference="PRESIDENCIA MUNICIPAL"
+            # )
+            # destinatario.addresses.append(domicilio)
+            #
+            # # Contacto
+            # contacto = ContactORM(
+            #     phone="6181234567",
+            #     ext="101"
+            # )
+            # destinatario.contacts.append(contacto)
+            #
+            # # Volante
+            # volante = VolanteORM(name="VOLANTE-2026-0001")
+            # destinatario.volantes.append(volante)
+            #
+            # session.add(destinatario)
+            # session.commit()
+            # session.refresh(destinatario)
+            #
+            # print(
+            #     f"destinatario: {destinatario.id} {destinatario.titulo.abreviatura} {destinatario.full_name}"
+            #     f"\ncargo: {destinatario.position.job_role.abreviatura}"
+            #     f"\ndependencia: {destinatario.position.organization.name}"
+            #     f"\ndomicilio: {domicilio.street} {domicilio.num_street}, {domicilio.colony}, {domicilio.city}"
+            #     f"\ncontacto: {contacto.phone} ext. {contacto.ext}"
+            #     f"\nvolante: {volante.name}"
+            #     f"\ncreado en: {destinatario.created_at}"
+            # )

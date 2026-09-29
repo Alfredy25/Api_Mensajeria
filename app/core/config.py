@@ -8,4 +8,3 @@ class Settings(BaseModel):
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./mensajeria.db")
 
 settings = Settings()
-
