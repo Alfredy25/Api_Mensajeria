@@ -15,7 +15,6 @@ class NameRole(str, Enum):
     CLIENT = "Client"
 
 
-
 class RoleORM(Base):
     __tablename__ = 'roles'
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)

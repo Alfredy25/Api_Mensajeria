@@ -10,8 +10,9 @@ if TYPE_CHECKING:
 
 class OrganizationORM(Base): # dependencias
     __tablename__ = "organizations"
-    __table_args__ = (UniqueConstraint("name", "state", name="uq_state_name"),
-                      )
+    __table_args__ = (
+        UniqueConstraint("name", "state", name="uq_state_name"),
+    )
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     state: Mapped[str | None] = mapped_column(String(60), nullable=False)

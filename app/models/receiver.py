@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from app.models.position import PositionORM
     from app.models.titulo import TitleORM
     from app.models.address import AddressORM
-    from app.models.contac import ContactORM
+    from app.models.contact import ContactORM
     from app.models.volante import VolanteORM
 
 
@@ -37,8 +37,8 @@ class ReceiverORM(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, index=True)
-    tipo_entidad: Mapped[str] = mapped_column(SQLEnum(EntidadesEnum, name="entidades_enum"), nullable=False)
-    full_name: Mapped[str] = mapped_column(String(70), nullable=False)
+    tipo_entity: Mapped[str] = mapped_column(SQLEnum(EntidadesEnum, name="entidades_enum"), nullable=False)
+    full_name: Mapped[str | None] = mapped_column(String(70), nullable=True)
     email: Mapped[str | None] = mapped_column(String(70), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(timezone.utc), nullable=False)
 
