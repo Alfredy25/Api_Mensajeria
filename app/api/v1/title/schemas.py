@@ -11,7 +11,7 @@ class TitleDto(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class TitleCreate(BaseModel):
-    abbreviation: str = Field(..., max_length=60)
+    abbreviation: str = Field(..., min_length=3, max_length=60)
     meaning: str = Field(..., min_length=3, max_length=150)  # Significado
 
 class TitleUpdate(BaseModel):

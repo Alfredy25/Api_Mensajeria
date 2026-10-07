@@ -27,6 +27,8 @@ Se utilizará `EntidadesEnum`:
 - `GOBIERNO`
 - `PRIVADA`
 
+
+
 ### Persona
 
 Para un destinatario de tipo `PERSONA` serán obligatorios:
@@ -34,16 +36,31 @@ Para un destinatario de tipo `PERSONA` serán obligatorios:
 - `type_entity`
 - `full_name`
 - `title`
-- `position`
-  - Cargo.
-  - Organización.
 - `address`
 
 Serán opcionales:
 
+- `position`
+  - Cargo.
+  - Organización.
 - `email`
 - `contact`
 - `volante`
+
+El puesto de una persona se resolverá de acuerdo con los datos recibidos:
+
+| Cargo | Organización | Regla |
+|---|---|---|
+| Sí | Sí | Buscar o crear el puesto normalmente. |
+| No | Sí | Utilizar el cargo genérico `SIN CARGO` con la organización recibida. |
+| No | No | No crear un puesto y conservar `position_id` como `null`. |
+| Sí | No | Rechazar la solicitud con `422 Unprocessable Entity`. |
+
+No se creará una organización genérica para una persona sin cargo ni
+organización, porque produciría información artificial en el catálogo y en las
+búsquedas.
+
+
 
 ### Gobierno y privada
 
@@ -80,7 +97,17 @@ Antes de crear un puesto se buscarán ambos catálogos:
 Los cargos institucionales permiten representar organizaciones sin una persona
 específica y sin cambiar inicialmente el modelo de puestos.
 
+El cargo genérico se registrará con abreviatura `SIN CARGO` y significado
+`Sin cargo especificado`. Se reutilizará para las personas que tengan una
+organización conocida, pero cuyo cargo no haya sido proporcionado. La
+combinación de ese cargo con cada organización producirá un puesto diferente.
+
+Una persona sin cargo ni organización no tendrá puesto. Los destinatarios
+`GOBIERNO` y `PRIVADA` siempre deberán tener organización y puesto.
+
 ## Búsqueda de destinatarios
+
+
 
 ### Endpoint previsto
 
@@ -88,19 +115,69 @@ específica y sin cambiar inicialmente el modelo de puestos.
 GET /receivers?search=juanito
 ```
 
-Una sola búsqueda consultará coincidencias parciales en:
+`search` será una búsqueda general y consultará coincidencias parciales en:
 
 - `ReceiverORM.full_name`
 - `OrganizationORM.name`, mediante la relación con `PositionORM`
 
+También se admitirán filtros opcionales:
+
+```http
+GET /receivers?type_entity=PERSONA&name=JUAN&address_state=JALISCO&sort_by=full_name&sort_order=asc&page=1&page_size=50
+```
+
+- `type_entity`: tipo de destinatario.
+- `name`: coincidencia parcial del nombre normalizado.
+- `organization_name`: coincidencia parcial del nombre de la organización.
+- `organization_state`: estado al que pertenece la organización.
+- `address_state`: estado de alguna dirección asociada al destinatario.
+- `sort_by`: campo de ordenamiento permitido.
+- `sort_order`: `asc` o `desc`.
+- `page`: número de página.
+- `page_size`: cantidad de resultados por página; será `50` por defecto y
+  tendrá un máximo de `100`.
+
+Solamente se aplicarán los filtros enviados y todos se combinarán mediante
+`AND`. Los filtros de dirección se implementarán mediante `EXISTS`, o una
+estrategia equivalente, para no duplicar destinatarios que tengan varias
+direcciones coincidentes.
+
+`sort_by` utilizará una lista cerrada de campos para evitar construir consultas
+con nombres de columna arbitrarios. Inicialmente se permitirán:
+
+- `id`
+- `full_name`
+- `type_entity`
+- `created_at`
+
+El orden predeterminado será `created_at desc`. Todo ordenamiento agregará `id`
+como segundo criterio para obtener resultados estables entre páginas.
+
+
+
 ### Respuestas
 
-- Si existen coincidencias: `200 OK` con una lista de `ReceiverDto`.
-- Si no existen coincidencias: `200 OK` con una lista vacía.
+- Si existen coincidencias: `200 OK` con una respuesta paginada.
+- Si no existen coincidencias: `200 OK` con `items` vacío.
 - `404 Not Found` se reservará para operaciones sobre un recurso individual
   inexistente, como consultar o actualizar un destinatario mediante su ID.
 
+Ejemplo conceptual:
+
+```json
+{
+  "items": [],
+  "total": 0,
+  "page": 1,
+  "page_size": 50
+}
+```
+
+
+
 ## Alta compuesta
+
+
 
 ### Endpoint previsto
 
@@ -112,7 +189,7 @@ El alta puede recibir:
 
 - Datos del destinatario.
 - Título, cuando corresponda.
-- Puesto con cargo y organización.
+- Puesto con cargo y organización, cuando corresponda.
 - Una dirección obligatoria.
 - Un contacto opcional.
 - Un volante opcional.
@@ -127,46 +204,93 @@ direcciones, contactos, puestos o volantes.
 1. Validar el payload según `type_entity`.
 2. Normalizar los textos utilizados para búsquedas y comparaciones.
 3. Para `PERSONA`, buscar o crear el título.
-4. Buscar o crear el cargo.
-5. Buscar o crear la organización.
-6. Buscar o crear el puesto.
-7. Buscar un destinatario existente mediante su identidad lógica.
-8. Si existe, responder con `409 Conflict` y su identificador.
-9. Si se recibió un volante, buscarlo o crearlo.
-10. Crear el destinatario.
-11. Crear y asociar la dirección.
-12. Crear y asociar el contacto, si fue proporcionado.
-13. Asociar el volante, si fue proporcionado.
-14. Confirmar toda la operación mediante un único `commit`.
-15. Ejecutar `rollback` ante cualquier error.
+4. Resolver si el destinatario requiere puesto según las reglas de su tipo.
+5. Cuando corresponda, buscar o crear el cargo.
+6. Cuando corresponda, buscar o crear la organización.
+7. Cuando corresponda, buscar o crear el puesto.
+8. Buscar un destinatario existente mediante su identidad lógica.
+9. Si existe, responder con `409 Conflict` y su identificador.
+10. Si se recibió un volante, buscarlo o crearlo.
+11. Crear el destinatario.
+12. Crear y asociar la dirección.
+13. Crear y asociar el contacto, si fue proporcionado.
+14. Asociar el volante, si fue proporcionado.
+15. Confirmar toda la operación mediante un único `commit`.
+16. Ejecutar `rollback` ante cualquier error.
 
 Los services auxiliares utilizados por este flujo no harán `commit`. Podrán
 utilizar `flush` para obtener identificadores sin cerrar la transacción.
 
 ## Normalización
 
-Los valores utilizados para buscar y detectar duplicados se normalizarán:
+Se distinguirán los valores de presentación de los valores utilizados para
+búsquedas y detección de duplicados:
 
-- Eliminar espacios al inicio y al final.
-- Convertir a mayúsculas.
-- Eliminar acentos.
+- El valor de presentación conservará los acentos y una capitalización legible.
+- El valor normalizado podrá almacenarse en una columna auxiliar o construirse
+  de forma consistente antes de consultar.
 
-También deberá definirse cómo tratar espacios internos repetidos. La regla
-recomendada es reducir cualquier secuencia de espacios a un único espacio.
+La normalización para búsquedas y comparaciones seguirá este orden:
+
+1. Aplicar normalización Unicode.
+2. Eliminar espacios al inicio y al final.
+3. Reducir cualquier secuencia de espacios internos a un único espacio.
+4. Convertir a mayúsculas.
+5. Eliminar acentos.
+
+No se eliminarán acentos ni se convertirán todos los textos visibles a
+mayúsculas, porque eso reduciría la calidad de datos como nombres y
+organizaciones. Tampoco se aplicará esta transformación indiscriminadamente a
+correos electrónicos, teléfonos, códigos postales o referencias.
+
+Reglas específicas:
+
+- Los correos se guardarán sin espacios exteriores y en minúsculas.
+- Los teléfonos y extensiones tendrán su propia normalización.
+- La abreviatura de un cargo se guardará en mayúsculas.
+- El significado de un cargo conservará mayúsculas y minúsculas para facilitar
+  su lectura.
+
+La conversión de la abreviatura se realizará en el service. La base de datos
+deberá agregar una restricción `CHECK` que valide que la abreviatura ya se
+encuentra en mayúsculas. Un `CHECK` no transforma el dato; solamente rechaza un
+valor que incumple la condición.
+
+Si existen otros sistemas que escriben directamente en la tabla, podrá
+evaluarse un trigger `BEFORE INSERT` y `BEFORE UPDATE` para realizar la
+conversión. Mientras la API sea el único punto de escritura, se preferirá la
+normalización en el service y el `CHECK` como protección.
 
 La implementación deberá verificar la collation de MySQL. Si es insensible a
-mayúsculas y acentos puede ayudar en las búsquedas, pero la normalización de
-entrada seguirá siendo necesaria para mantener datos consistentes.
+mayúsculas y acentos puede ayudar en las búsquedas, pero no sustituye las claves
+normalizadas ni las reglas de persistencia.
 
 ## Reglas de unicidad
 
+
+
 ### Persona
 
-Un destinatario `PERSONA` se considerará duplicado cuando coincidan:
+Un destinatario `PERSONA` con puesto se considerará duplicado cuando coincidan:
 
 ```text
 type_entity + full_name normalizado + title_id + position_id
 ```
+
+Cuando la persona no tenga puesto, la identidad será:
+
+```text
+type_entity + full_name normalizado + title_id + ausencia de position_id
+```
+
+MySQL permite varias filas con `NULL` dentro de una restricción `UNIQUE`.
+Por ello, la restricción de base de datos no deberá depender directamente de
+`position_id` nullable. Durante la implementación se utilizará una columna
+generada, una clave de identidad equivalente o una estrategia que represente la
+ausencia del puesto mediante un valor estable para garantizar la unicidad ante
+solicitudes concurrentes.
+
+
 
 ### Gobierno o privada
 
@@ -231,6 +355,20 @@ normalizados, incluyendo al menos:
 Las referencias del domicilio no deberían formar parte de la identidad, porque
 pueden cambiar sin representar una dirección diferente.
 
+### Alta de una dirección adicional
+
+```http
+POST /receivers/{receiver_id}/addresses
+```
+
+- Recibirá un `AddressCreate`.
+- Responderá `201 Created` con `AddressDto`.
+- Responderá `404 Not Found` si el destinatario no existe.
+- Responderá `409 Conflict` si el destinatario ya tiene una dirección
+  equivalente.
+- Una dirección equivalente perteneciente a otro destinatario no producirá
+  conflicto.
+
 ## Contactos
 
 - El contacto es opcional durante el alta.
@@ -244,6 +382,20 @@ La identidad lógica será:
 ```text
 receiver_id + phone normalizado + ext normalizada
 ```
+
+### Alta de un contacto adicional
+
+```http
+POST /receivers/{receiver_id}/contacts
+```
+
+- El teléfono será obligatorio y la extensión será opcional.
+- Responderá `201 Created` con `ContactDto`.
+- Responderá `404 Not Found` si el destinatario no existe.
+- Responderá `409 Conflict` si ya existe la misma combinación normalizada de
+  teléfono y extensión para ese destinatario.
+
+
 
 ## Volantes
 
@@ -261,25 +413,84 @@ Reglas:
 Durante el alta compuesta se utilizará una operación `ensure_volante`: si el
 volante existe se reutiliza; si no existe, se crea.
 
+### Asociación de un volante adicional
+
+```http
+POST /receivers/{receiver_id}/volantes
+```
+
+- Buscará o creará el volante mediante `ensure_volante`.
+- Creará la asociación dentro de la misma transacción.
+- Responderá `201 Created` con `VolanteDto` cuando se cree la asociación.
+- Responderá `404 Not Found` si el destinatario no existe.
+- Responderá `409 Conflict` si la asociación ya existe.
+
+## Cambio de puesto
+
+El cambio de puesto reemplazará la asignación actual:
+
+```http
+PUT /receivers/{receiver_id}/position
+```
+
+El cuerpo contendrá la organización y un cargo opcional. Cuando una `PERSONA`
+tenga organización sin cargo se aplicará `SIN CARGO`. Para `GOBIERNO` y
+`PRIVADA`, la ausencia del cargo aplicará el cargo institucional
+correspondiente. La operación responderá `200 OK` con el `PositionDto`
+asignado.
+
+No se modificará un `PositionORM` existente, ya que puede estar compartido por
+varios destinatarios. Se buscará o creará la nueva combinación de cargo y
+organización y después se reemplazará `receiver.position_id`.
+
+Para retirar el puesto de una persona que ya no tenga cargo ni organización:
+
+```http
+DELETE /receivers/{receiver_id}/position
+```
+
+Esta operación solamente se permitirá para `PERSONA`. Los destinatarios
+`GOBIERNO` y `PRIVADA` siempre deberán conservar un puesto. Cuando se complete
+correctamente, responderá `204 No Content`.
+
+Después de cambiar o retirar el puesto se validará nuevamente la identidad
+lógica del destinatario. Si el resultado coincide con otro destinatario, se
+responderá `409 Conflict` incluyendo el `receiver_id` existente.
+
+Este diseño solamente conserva el puesto actual. Si posteriormente se requiere
+historial de puestos, deberá incorporarse una relación histórica con fechas de
+inicio y fin en lugar de sobrescribir únicamente `position_id`.
+
 ## Responsabilidades por capa
+
+
 
 ### Schemas
 
 - Definir los contratos de entrada y salida.
 - Validar campos requeridos según `type_entity`.
 - Rechazar `full_name` y `title` para `GOBIERNO` y `PRIVADA`.
-- Exigir `full_name`, `title` y `position` para `PERSONA`.
+- Exigir `full_name` y `title` para `PERSONA`.
+- Permitir que `position` sea opcional únicamente para `PERSONA`.
+- Permitir una organización con cargo opcional en los contratos de puesto.
+- Rechazar un cargo sin organización.
 - Exigir siempre una dirección.
 - Permitir contacto y volante opcionales.
+
+
 
 ### Repositories
 
 - Ejecutar exclusivamente consultas y operaciones de persistencia.
-- Buscar destinatarios por nombre u organización.
+- Buscar destinatarios mediante filtros opcionales.
+- Aplicar únicamente campos de ordenamiento permitidos.
+- Paginar los resultados y calcular su total.
 - Buscar duplicados según la identidad lógica.
 - Crear y actualizar entidades ORM.
 - No contener reglas HTTP ni hacer `commit`.
 - No coordinar directamente otros repositories.
+
+
 
 ### Services auxiliares
 
@@ -300,10 +511,14 @@ compuesta.
 
 - Coordinar services y repositories.
 - Aplicar validaciones de negocio.
+- Resolver los cargos genéricos e institucionales según el tipo de
+  destinatario.
 - Detectar destinatarios duplicados.
 - Administrar la transacción completa.
 - Convertir el resultado a DTO.
 - Traducir los conflictos de negocio a respuestas HTTP apropiadas.
+
+
 
 ### Router
 
@@ -312,15 +527,24 @@ compuesta.
 - Delegar la lógica de negocio al service.
 - No construir modelos ORM ni coordinar repositories.
 
+
+
 ## Endpoints previstos
+
+
 
 ### Primera etapa
 
 ```text
-GET    /receivers?search={value}
+GET    /receivers
 GET    /receivers/{receiver_id}
 POST   /receivers
 ```
+
+El listado `GET /receivers` aceptará `search`, filtros, ordenamiento y
+paginación como parámetros opcionales.
+
+
 
 ### Extensiones posteriores
 
@@ -329,6 +553,8 @@ PATCH  /receivers/{receiver_id}
 POST   /receivers/{receiver_id}/addresses
 POST   /receivers/{receiver_id}/contacts
 POST   /receivers/{receiver_id}/volantes
+PUT    /receivers/{receiver_id}/position
+DELETE /receivers/{receiver_id}/position
 ```
 
 Los módulos `addresses`, `contacts`, `positions`, `titles` y `volantes` también
@@ -344,6 +570,8 @@ podrán exponer sus propios endpoints.
 6. Configurar la inyección de dependencias.
 7. Simplificar el router para que delegue toda la lógica.
 8. Agregar pruebas para `PERSONA`, `GOBIERNO` y `PRIVADA`.
+
+
 
 ## Fuera del alcance inicial
 

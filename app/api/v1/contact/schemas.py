@@ -7,8 +7,8 @@ class ContactDto(BaseModel):
     ext: str | None
 
 class ContactCreate(BaseModel):
-    phone: str = Field(...)
-    ext: Optional[str] = Field(default=None)
+    phone: str = Field(..., min_length=8, max_length=10)
+    ext: Optional[str] = Field(default=None, max_length=8)
 
 class ContactUpdate(BaseModel):
     phone: Optional[str] = Field(default=None)

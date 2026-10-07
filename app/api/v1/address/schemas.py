@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AddressUpdate(BaseModel):
@@ -13,14 +13,14 @@ class AddressUpdate(BaseModel):
     address_reference: Optional[str]
 
 class AddressCreate(BaseModel):
-    street: str
-    num_street: str
-    colony: str
-    state: str
-    postal_code: str
-    city: str
-    country: str
-    address_reference: Optional[str]
+    street: str = Field(..., min_length=3, max_length=80)
+    num_street: str = Field(..., min_length=1, max_length=15)
+    colony: str = Field(..., min_length=3, max_length=60)
+    state: str = Field(..., min_length=3, max_length=50)
+    postal_code: str = Field(..., min_length=4, max_length=5)
+    city: str = Field(..., min_length=3, max_length=60)
+    country: str = Field(..., min_length=3, max_length=50)
+    address_reference: Optional[str] = Field(default=None, max_length=50)
 
 
 class AddressDto(AddressCreate):
