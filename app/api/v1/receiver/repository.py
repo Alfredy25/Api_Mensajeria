@@ -35,7 +35,7 @@ class ReceiverRepositoryImpl(ReceiverRepository):
             select(ReceiverORM)
             .options(
                 selectinload(ReceiverORM.addresses),
-                joinedload(ReceiverORM.titulo),
+                joinedload(ReceiverORM.title),
                 joinedload(ReceiverORM.position),
                 selectinload(ReceiverORM.contacts)
             )
@@ -45,11 +45,11 @@ class ReceiverRepositoryImpl(ReceiverRepository):
         )
         return list(self._db.scalars(stmt).all())
 
-    def create(self, tipo_entity: EntidadesEnum, full_name: str, email: str,
-               titulo: TitleORM, puesto: PositionORM ) -> ReceiverORM:
+    def create(self, type_entity: EntidadesEnum, full_name: str, email: str,
+               title: TitleORM, puesto: PositionORM ) -> ReceiverORM:
         receiver = ReceiverORM(
-            titulo=titulo,
-            tipo_entity=tipo_entity.value,
+            titulo=title,
+            tipo_entity=type_entity,
             full_name=full_name,
             email=email,
             position=puesto

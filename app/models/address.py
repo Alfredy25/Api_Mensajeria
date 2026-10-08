@@ -15,9 +15,10 @@ class AddressORM(Base):
     street: Mapped[str] = mapped_column(String(100), nullable=False)
     num_street: Mapped[str] = mapped_column(String(50), nullable=False)
     colony: Mapped[str] = mapped_column(String(100), nullable=False)
+    municipality: Mapped[str] = mapped_column(String(60), nullable=False)
+    city: Mapped[str] = mapped_column(String(100), nullable=False)
     state: Mapped[str] = mapped_column(String(100), nullable=False)
     postal_code: Mapped[str] = mapped_column(String(6), nullable=False)
-    city: Mapped[str] = mapped_column(String(100), nullable=False)
     country: Mapped[str] = mapped_column(String(50), nullable=False)
     address_reference: Mapped[str | None] = mapped_column(Text, nullable=True)
 

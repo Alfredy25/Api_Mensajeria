@@ -45,7 +45,7 @@ class ReceiverORM(Base):
     title_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("titles.id", ondelete="SET NULL"), nullable=True)
     position_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("positions.id", ondelete="SET NULL"), nullable=True)
 
-    titulo: Mapped["TitleORM"] = relationship("TitleORM", lazy="joined")
+    title: Mapped["TitleORM"] = relationship("TitleORM", lazy="joined")
     position: Mapped["PositionORM"] = relationship("PositionORM", back_populates="receivers", lazy="joined")
     addresses: Mapped[list["AddressORM"]] = relationship(
         "AddressORM",

@@ -2,7 +2,7 @@
 
 ## Última actualización
 
-6 de octubre de 2026.
+7 de octubre de 2026.
 
 ## Punto actual
 
@@ -27,7 +27,9 @@ Se actualizó `DISENO_API_DESTINATARIOS.md` para definir:
 - Filtros opcionales, ordenamiento y paginación.
 - Normalización para búsquedas y detección de duplicados.
 - Endpoints posteriores para direcciones, contactos, volantes y cambio de
-  puesto.
+puesto.
+
+
 
 ### Schemas
 
@@ -36,38 +38,40 @@ Se realizaron los siguientes cambios iniciales:
 - `ReceiverCreate.title` utiliza `TitleCreate` en lugar de `TitleDto`.
 - Los campos opcionales de `ReceiverCreate` tienen `default=None`.
 - `ReceiverCreate` tiene un `model_validator` con reglas por tipo de
-  destinatario.
+destinatario.
 - Una `PERSONA` requiere `full_name` no vacío y `title`.
 - `GOBIERNO` y `PRIVADA` rechazan `full_name` y `title`.
 - `GOBIERNO` y `PRIVADA` requieren `position`.
 - `PositionCreate.job_role` es opcional.
 - `PositionCreate.organization` continúa siendo obligatorio.
 - Las colecciones de `ReceiverDto` utilizan listas vacías como valor
-  predeterminado en lugar de `null`.
+predeterminado en lugar de `null`.
 - Se agregaron restricciones iniciales de longitud a schemas auxiliares.
+
+
 
 ### Modelo
 
 - El límite de `ReceiverORM.email` cambió de 70 a 80 caracteres para coincidir
-  con `ReceiverCreate.email`.
+con `ReceiverCreate.email`.
 
-Este cambio de longitud todavía requiere una migración de Alembic antes de
-considerarse completo.
+Este cambio de longitud todavía no requiere una migración de Alembic antes de
+considerarse completo ya que aun no se crean las tablas en MySQL solo la tabla de prueba llamada mensajeria.db.
 
 ## Pendientes antes de las pruebas
 
 Revisar estos puntos en `app/api/v1/receiver/schemas.py`:
 
 1. `ReceiverCreate.title` no debe declarar `min_length` ni `max_length`, porque
-   es un objeto `TitleCreate`, no una cadena. Esas restricciones pertenecen a
+  es un objeto `TitleCreate`, no una cadena. Esas restricciones pertenecen a
    los campos internos de `TitleCreate`.
 2. Revisar `full_name` con `min_length=5`. Este límite rechaza nombres válidos
-   como `Ana`; la recomendación actual es `min_length=1` y conservar la
+  como `Ana`; la recomendación actual es `min_length=1` y conservar la
    comprobación con `strip()` para rechazar cadenas de espacios.
 3. Puede eliminarse el `else` posterior al retorno del caso `PERSONA` para
-   reducir indentación, aunque no es un error funcional.
+  reducir indentación, aunque no es un error funcional.
 4. Se puede utilizar `Self` como tipo de retorno del validator en lugar de la
-   referencia de cadena `"ReceiverCreate"`.
+  referencia de cadena `"ReceiverCreate"`.
 5. Eliminar imports que todavía no se utilizan, por ejemplo `AddressUpdate`.
 
 También debe verificarse que las longitudes declaradas en `AddressCreate`,
@@ -109,42 +113,25 @@ Después de aprobar las pruebas de `ReceiverCreate`:
 2. Definir el mapeo entre `ReceiverORM.titulo` y `ReceiverDto.title`.
 3. Corregir la diferencia entre `AddressORM.id` y `AddressDto.address_id`.
 4. Definir el mapeo de `JobRoleORM.abreviatura/significado` hacia
-   `JobDto.abbreviation/meaning`.
+  `JobDto.abbreviation/meaning`.
 5. Decidir si el service construirá los DTO explícitamente. Esta es la opción
-   recomendada por el diseño para evitar acoplar los schemas a los nombres ORM.
+  recomendada por el diseño para evitar acoplar los schemas a los nombres ORM.
 6. Revisar `ReceiverUpdate`; en Pydantic v2 sus campos `Optional` siguen siendo
-   obligatorios mientras no tengan `default=None`.
+  obligatorios mientras no tengan `default=None`.
 7. Definir si `type_entity` podrá modificarse.
 8. Mantener el cambio de puesto fuera de `ReceiverUpdate`, mediante los
-   endpoints específicos definidos en el diseño.
+  endpoints específicos definidos en el diseño.
 9. Crear el schema de respuesta paginada para el listado.
 10. Crear los schemas de filtros y ordenamiento si se decide representarlos
-    mediante modelos Pydantic.
+  mediante modelos Pydantic.
+
+
 
 ## Pasos posteriores de implementación
 
-### Paso 2. Revisar schemas auxiliares
 
-- Títulos.
-- Cargos.
-- Organizaciones.
-- Puestos.
-- Direcciones.
-- Contactos.
-- Volantes.
-- Contratos para agregar relaciones después del alta.
 
-### Paso 3. Repository de destinatarios
-
-- Consulta por identificador.
-- Búsqueda general.
-- Filtros opcionales.
-- Ordenamiento mediante lista de campos permitidos.
-- Paginación y total.
-- Búsqueda de duplicados con y sin puesto.
-- Consultas sin reglas HTTP y sin `commit`.
-
-### Paso 4. Services auxiliares
+### Paso 2. Services auxiliares para alta compuesta
 
 - `TitleService.ensure_title`.
 - `PositionService.ensure_job_role`.
@@ -154,7 +141,18 @@ Después de aprobar las pruebas de `ReceiverCreate`:
 - `VolanteService.ensure_volante`.
 - Operaciones de direcciones y contactos.
 
-### Paso 5. `ReceiverService`
+
+
+### Paso 3. Repository de destinatarios para creación
+
+- Consulta por identificador.
+- Creación del destinatario base.
+- Búsqueda de duplicados con y sin puesto.
+- Consultas sin reglas HTTP y sin `commit`.
+
+
+
+### Paso 4. `ReceiverService` (creación primero)
 
 - Normalización.
 - Validaciones de negocio.
@@ -165,18 +163,42 @@ Después de aprobar las pruebas de `ReceiverCreate`:
 - `commit` y `rollback` en el coordinador.
 - Conversión explícita a DTO.
 
-### Paso 6. Inyección de dependencias
+
+
+### Paso 5. Inyección de dependencias
 
 - Construir repositories y services mediante dependencias de FastAPI.
 - Evitar su creación manual dentro del router.
 
-### Paso 7. Router
+
+
+### Paso 6. Router para alta de destinatarios
 
 - Delegar la lógica al service.
-- Implementar códigos HTTP y schemas de respuesta.
+- Implementar `POST /receivers` con códigos HTTP y schemas de respuesta.
 - Eliminar la coordinación directa de repositories.
 
-### Paso 8. Pruebas completas
+
+
+### Paso 7. Búsqueda de destinatarios (Repository + Service)
+
+- Búsqueda general.
+- Filtros opcionales.
+- Ordenamiento mediante lista de campos permitidos.
+- Paginación y total.
+- Contrato de respuesta paginada.
+
+
+
+### Paso 8. Router para listado y consulta
+
+- Implementar `GET /receivers` con búsqueda, filtros y paginación.
+- Implementar `GET /receivers/{receiver_id}`.
+- Mantener el router delgado y delegar al service.
+
+
+
+### Paso 9. Pruebas completas
 
 - Pruebas unitarias de services.
 - Pruebas de repository con base de datos.
@@ -184,27 +206,15 @@ Después de aprobar las pruebas de `ReceiverCreate`:
 - Casos de concurrencia y unicidad.
 - Casos `PERSONA`, `GOBIERNO` y `PRIVADA`.
 
+
+
 ## Pendientes de base de datos
 
-- Crear una migración para ampliar `receivers.email` a 80 caracteres.
+- Crear una migración para tener la primer version de las tablas.
 - Diseñar la restricción de unicidad para personas con `position_id = null`.
 - Agregar columnas o claves normalizadas cuando se implemente la estrategia de
-  búsqueda.
+búsqueda.
 - Agregar el `CHECK` para abreviaturas de cargos en mayúsculas.
 - Revisar restricciones únicas de direcciones, contactos y relaciones con
-  volantes.
-
-## Mensaje de commit sugerido
-
-No se ha creado el commit. Un ejemplo para los cambios actuales es:
-
-```text
-feat(receivers): valida contratos iniciales de destinatarios
-
-- valida campos según el tipo de destinatario
-- permite personas sin puesto y cargos opcionales
-- agrega restricciones a schemas relacionados
-- alinea la longitud del email del destinatario
-- documenta las reglas y próximos pasos de implementación
-```
+volantes.
 

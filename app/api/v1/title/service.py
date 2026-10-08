@@ -21,10 +21,16 @@ class TitleService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail="El titulo ya existe",
             )
-        title_orm = TitleORM(abbreviation=abbreviation, meaning=meaning)
-        return TitleDto.model_validate(
-            title_orm, from_attributes=True
-        )
+        try:
+            title_orm = TitleORM(abbreviation=abbreviation, meaning=meaning)
+            self._repo.create(title_orm)
+            self._db.commit()
+            return TitleDto.model_validate(
+                title_orm, from_attributes=True
+            )
+        except SQLAlchemyError as e:
+            self._db.rollback()
+            raise
 
 
     def ensure_title(self, abbreviation: str, meaning: str) -> TitleDto:
@@ -32,11 +38,14 @@ class TitleService:
         if title_orm:
             return TitleDto.model_validate(title_orm)
 
-        new_title_orm = TitleORM(abbreviation=abbreviation, meaning=meaning)
-        title_orm = self._repo.create(new_title_orm)
-        self._db.commit()
-        self._db.refresh(title_orm)
-        return TitleDto.model_validate(title_orm, from_attributes=True)
+        try:
+            new_title_orm = TitleORM(abbreviation=abbreviation, meaning=meaning)
+            title_orm = self._repo.create(new_title_orm)
+            self._db.flush()
+            return TitleDto.model_validate(title_orm, from_attributes=True)
+        except SQLAlchemyError as e:
+            self._db.rollback()
+            raise
 
     def get_titles(self) -> List[TitleDto]:
         titles = self._repo.get_titles()
@@ -58,12 +67,9 @@ class TitleService:
             self._db.commit()
             self._db.refresh(title_dto)
             return TitleDto.model_validate(title_dto, from_attributes=True)
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
             self._db.rollback()
-            raise HTTPException(
-                status_code= status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Error al actualizar el title",
-            )
+            raise
 
 
 

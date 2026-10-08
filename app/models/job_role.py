@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 class JobRoleORM(Base): # Cargos
     __tablename__ = "job_roles"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    abreviatura: Mapped[str] = mapped_column(String(60), nullable=False, unique=True)
-    significado: Mapped[str] = mapped_column(String(150), nullable=False)
+    abbreviation: Mapped[str] = mapped_column(String(60), nullable=False, unique=True)
+    meaning: Mapped[str] = mapped_column(String(150), nullable=False)
 
     positions: Mapped[list["PositionORM"]] = relationship(
         "PositionORM",
