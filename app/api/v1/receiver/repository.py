@@ -13,8 +13,8 @@ class ReceiverRepository(ABC):
         ...
 
     @abstractmethod
-    def create(self, tipo_entidad: EntidadesEnum, full_name: str, email: str,
-               titulo: TitleORM, puesto: PositionORM) -> ReceiverORM:
+    def create(self, type_entity: EntidadesEnum, full_name: str, email: str,
+               title: TitleORM, position: PositionORM) -> ReceiverORM:
         ...
 
     @abstractmethod
@@ -46,13 +46,13 @@ class ReceiverRepositoryImpl(ReceiverRepository):
         return list(self._db.scalars(stmt).all())
 
     def create(self, type_entity: EntidadesEnum, full_name: str, email: str,
-               title: TitleORM, puesto: PositionORM ) -> ReceiverORM:
+               title: TitleORM, position: PositionORM ) -> ReceiverORM:
         receiver = ReceiverORM(
-            titulo=title,
-            tipo_entity=type_entity,
+            title=title,
+            type_entity=type_entity,
             full_name=full_name,
             email=email,
-            position=puesto
+            position=position
         )
         self._db.add(receiver)
         self._db.flush()

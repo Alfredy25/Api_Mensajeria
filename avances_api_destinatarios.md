@@ -162,6 +162,21 @@ Después de aprobar las pruebas de `ReceiverCreate`:
 - `flush` en services auxiliares.
 - `commit` y `rollback` en el coordinador.
 - Conversión explícita a DTO.
+- Resolver en `ReceiverService` los cargos predeterminados según el tipo de
+  destinatario: `SIN CARGO`, `INSTITUCIONAL GOBIERNO` o
+  `INSTITUCIONAL PRIVADO`.
+- Coordinar los métodos `ensure_*`, los cuales deben reutilizar o crear
+  entidades, devolver modelos ORM y no responder con `409`.
+- Permitir que una `PERSONA` sin cargo ni organización conserve
+  `position_id = null`.
+- Rechazar un cargo sin organización.
+- Delegar en `PositionService` la búsqueda o creación de la combinación entre
+  cargo y organización, sin trasladarle las reglas propias del tipo de
+  destinatario.
+- Mantener separados los casos de uso: los métodos `create_*` de endpoints
+  propios pueden detectar conflictos y administrar su transacción, mientras
+  que los métodos `ensure_*` participan en la transacción coordinada por
+  `ReceiverService`.
 
 
 

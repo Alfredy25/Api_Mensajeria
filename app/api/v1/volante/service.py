@@ -52,19 +52,16 @@ class VolanteService:
             self._db.rollback()
             raise
 
-    def ensure_volante(self, volante: VolanteCreate) -> VolanteDto:
+    def ensure_volante(self, volante: VolanteCreate) -> VolanteORM:
         volante_orm = self._repo.get_by_name(volante.name)
         if volante_orm:
-            return VolanteDto.model_validate(volante_orm, from_attributes=True)
+            return volante_orm
 
         volante_orm = VolanteORM(name=volante.name)
-        try:
-            volante_orm = self._repo.create(volante_orm)
-            self._db.flush()
-            return VolanteDto.model_validate(volante_orm, from_attributes=True)
-        except SQLAlchemyError as e:
-            self._db.rollback()
-            raise
+
+        volante_orm = self._repo.create(volante_orm)
+        self._db.flush()
+        return volante_orm
 
 
 

@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.api.v1.address.repository import AddressRepository
@@ -20,13 +21,18 @@ class AddressService:
                     colony = address_create.colony,
                     postal_code = address_create.postal_code,
                     city = address_create.city,
+                    municipality = address_create.municipality,
                     country = address_create.country,
-                    address_reference = address_create.address_reference
+                    address_reference = address_create.address_reference if address_create.address_reference else None,
                 )
-        address_orm = self._repo.create(new_address)
-        self._db.commit()
-        self._db.refresh(address_orm)
-        return AddressDto.model_validate(address_orm)
+        try:
+            address_orm = self._repo.create(new_address)
+            self._db.commit()
+            self._db.refresh(address_orm)
+            return AddressDto.model_validate(address_orm)
+        except SQLAlchemyError:
+            self._db.rollback()
+            raise
 
     def update_address(self, address_update: AddressUpdate, address_id) -> AddressDto:
         address_orm = self._repo.find_by_id(address_id)
@@ -35,5 +41,26 @@ class AddressService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"No address found with id {address_id}"
             )
-        address_orm_update = self._repo.update(address_orm, address_update)
-        return AddressDto.model_validate(address_orm_update)
+        try:
+            address_orm_update = self._repo.update(address_orm, address_update)
+            self._db.commit()
+            self._db.refresh(address_orm_update)
+            return AddressDto.model_validate(address_orm_update)
+        except SQLAlchemyError:
+            self._db.rollback()
+            raise
+
+    def create_address_with_receiver(self, address_create: AddressCreate) -> AddressORM:
+        new_address = AddressORM(
+            street=address_create.street,
+            num_street=address_create.num_street,
+            state=address_create.state,
+            colony=address_create.colony,
+            postal_code=address_create.postal_code,
+            city=address_create.city,
+            municipality=address_create.municipality,
+            country=address_create.country,
+            address_reference=address_create.address_reference if address_create.address_reference else None,
+        )
+        address_orm = self._repo.create(new_address)
+        return address_orm

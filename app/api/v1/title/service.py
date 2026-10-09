@@ -33,20 +33,6 @@ class TitleService:
             raise
 
 
-    def ensure_title(self, abbreviation: str, meaning: str) -> TitleDto:
-        title_orm = self._repo.get_by_abbreviation(abbreviation)
-        if title_orm:
-            return TitleDto.model_validate(title_orm)
-
-        try:
-            new_title_orm = TitleORM(abbreviation=abbreviation, meaning=meaning)
-            title_orm = self._repo.create(new_title_orm)
-            self._db.flush()
-            return TitleDto.model_validate(title_orm, from_attributes=True)
-        except SQLAlchemyError as e:
-            self._db.rollback()
-            raise
-
     def get_titles(self) -> List[TitleDto]:
         titles = self._repo.get_titles()
         return [
@@ -70,6 +56,16 @@ class TitleService:
         except SQLAlchemyError as e:
             self._db.rollback()
             raise
+
+    def ensure_title(self, abbreviation: str, meaning: str) -> TitleORM:
+        title_orm = self._repo.get_by_abbreviation(abbreviation)
+        if title_orm:
+            return title_orm
+
+        new_title_orm = TitleORM(abbreviation=abbreviation, meaning=meaning)
+        title_orm = self._repo.create(new_title_orm)
+        self._db.flush()
+        return title_orm
 
 
 

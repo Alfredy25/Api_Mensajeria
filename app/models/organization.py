@@ -14,7 +14,7 @@ class OrganizationORM(Base): # dependencias
         UniqueConstraint("name", "state", name="uq_state_name"),
     )
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    name: Mapped[str] = mapped_column(String(180), nullable=False)
     state: Mapped[str | None] = mapped_column(String(60), nullable=False)
 
     positions: Mapped[list["PositionORM"]] = relationship(

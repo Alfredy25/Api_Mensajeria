@@ -3,14 +3,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class AddressUpdate(BaseModel):
-    street: Optional[str]
-    num_street: Optional[str]
-    colony: Optional[str]
-    state: Optional[str]
-    postal_code: Optional[str]
-    city: Optional[str]
-    country: Optional[str]
-    address_reference: Optional[str]
+    street: Optional[str] = None
+    num_street: Optional[str] = None
+    colony: Optional[str] = None
+    state: Optional[str] = None
+    postal_code: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
+    address_reference: Optional[str] = None
 
 class AddressCreate(BaseModel):
     street: str = Field(..., min_length=3, max_length=80)
