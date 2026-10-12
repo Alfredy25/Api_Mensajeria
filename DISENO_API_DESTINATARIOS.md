@@ -585,3 +585,64 @@ Se implementarán en etapas posteriores:
 - Integración con registros procesados por inteligencia artificial.
 - API de envíos.
 
+## Cambio de collation en producción
+
+La base de datos de producción utiliza `utf8mb3_general_ci`. Esta collation es
+sensible a acentos (`PEREZ ≠ PÉREZ`) y está deprecada desde MySQL 8.0.
+
+Para que las búsquedas y la detección de duplicados funcionen de forma
+consistente entre desarrollo y producción, se debe migrar a
+`utf8mb4_0900_ai_ci` (accent insensitive, case insensitive).
+
+### Pasos
+
+1. Verificar duplicados que se convertirían en conflicto con la nueva
+   collation:
+
+```sql
+-- Ejemplo para una columna con restricción UNIQUE
+SELECT columna, COUNT(*)
+FROM tabla
+GROUP BY columna COLLATE utf8mb4_0900_ai_ci
+HAVING COUNT(*) > 1;
+```
+
+2. Hacer backup completo antes de alterar:
+
+```bash
+mysqldump -u usuario -p mensajeria > backup_antes_collation.sql
+```
+
+3. Cambiar la base de datos para que las tablas nuevas hereden el charset:
+
+```sql
+ALTER DATABASE mensajeria
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_0900_ai_ci;
+```
+
+4. Convertir las tablas existentes:
+
+```sql
+ALTER TABLE nombre_tabla
+    CONVERT TO CHARACTER SET utf8mb4
+    COLLATE utf8mb4_0900_ai_ci;
+```
+
+5. Verificar el resultado:
+
+```sql
+SHOW TABLE STATUS;
+SHOW FULL COLUMNS FROM nombre_tabla;
+```
+
+### Consideraciones
+
+- El `ALTER TABLE` reconstruye índices y puede bloquear escrituras. Ejecutar en
+  horario de bajo tráfico.
+- Las tablas actuales (~100k filas) son pequeñas; el cambio toma segundos.
+- Las tablas nuevas (receivers, addresses, etc.) ya se crean con
+  `utf8mb4_0900_ai_ci` si la BD tiene ese charset.
+- Las tablas existentes conservan su collation original hasta que se conviertan
+  explícitamente.
+
