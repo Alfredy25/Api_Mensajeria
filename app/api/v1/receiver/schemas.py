@@ -5,7 +5,7 @@ from pydantic_core import PydanticCustomError
 
 from app.api.v1.address.schemas import AddressCreate, AddressDto
 from app.api.v1.contact.schemas import ContactDto, ContactCreate
-from app.api.v1.position.schemas import PositionCreate, PositionDto
+from app.api.v1.position.schemas import PositionCreateWithReceiver, PositionDto
 from app.api.v1.title.schemas import TitleDto, TitleCreate
 from app.api.v1.volante.schemas import VolanteDto, VolanteCreate
 from app.models.receiver import EntidadesEnum
@@ -28,7 +28,7 @@ class ReceiverCreate(BaseModel):
     title: Optional[TitleCreate] = Field(default=None, description="Título de la persona si es de tipo PERSONA")
     full_name: Optional[str] = Field(default=None, min_length=5, max_length=70, description="Nombre completo de la persona si es de tipo PERSONA")
     email: Optional[EmailStr] = Field(default=None, max_length=80, description="Email de la entidad")
-    position: Optional[PositionCreate] = Field(default=None, description="Puesto de la entidad")
+    position: Optional[PositionCreateWithReceiver] = Field(default=None, description="Puesto de la entidad")
     address: AddressCreate = Field(..., description="Dirección de la entidad")
     contact: Optional[ContactCreate] = Field(default=None, description="Contacto de la entidad")
     volante: Optional[VolanteCreate] = Field(default=None, description="Volante de la entidad")

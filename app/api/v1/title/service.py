@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from app.api.v1.title.repository import TitleRepository
-from app.api.v1.title.schemas import TitleDto, TitleUpdate
+from app.api.v1.title.schemas import TitleDto, TitleUpdate, TitleCreate
 from app.models import TitleORM
 
 
@@ -57,12 +57,12 @@ class TitleService:
             self._db.rollback()
             raise
 
-    def ensure_title(self, abbreviation: str, meaning: str) -> TitleORM:
-        title_orm = self._repo.get_by_abbreviation(abbreviation)
+    def ensure_title(self, title: TitleCreate) -> TitleORM:
+        title_orm = self._repo.get_by_abbreviation(title.abbreviation)
         if title_orm:
             return title_orm
 
-        new_title_orm = TitleORM(abbreviation=abbreviation, meaning=meaning)
+        new_title_orm = TitleORM(abbreviation=title.abbreviation, meaning=title.meaning)
         title_orm = self._repo.create(new_title_orm)
         self._db.flush()
         return title_orm

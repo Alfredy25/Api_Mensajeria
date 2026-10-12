@@ -50,6 +50,7 @@ class AddressService:
             self._db.rollback()
             raise
 
+
     def create_address_with_receiver(self, address_create: AddressCreate) -> AddressORM:
         new_address = AddressORM(
             street=address_create.street,
@@ -62,5 +63,4 @@ class AddressService:
             country=address_create.country,
             address_reference=address_create.address_reference if address_create.address_reference else None,
         )
-        address_orm = self._repo.create(new_address)
-        return address_orm
+        return new_address

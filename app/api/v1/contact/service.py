@@ -40,5 +40,5 @@ class ContactService:
             phone=contact.phone,
             ext=contact.ext if contact.ext else None
         )
-        return self._repo.create(contact_orm)
+        return contact_orm
 
