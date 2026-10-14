@@ -1,11 +1,13 @@
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class ContactDto(BaseModel):
     id: int
     phone: str = Field(...)
     ext: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 class ContactCreate(BaseModel):
     phone: str = Field(..., min_length=8, max_length=10)

@@ -1,4 +1,4 @@
-from typing import List, Optional, Self
+from typing import List, Optional, Self, Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 from pydantic_core import PydanticCustomError
@@ -67,3 +67,17 @@ class ReceiverUpdate(BaseModel):
     title: Optional[TitleDto] = None
     full_name: Optional[str] = None
     email: Optional[str] = None
+
+class PaginatedReceiver(BaseModel):
+    page:int
+    page_size: int
+    total: int
+    total_pages: int
+    has_prev: bool
+    has_next: bool
+    order_by: Literal["id","full_name", "state", "name_org"]
+    direction: Literal["asc", "desc"]
+    search: Optional[str] = None
+    items: List[ReceiverDto] = Field(default_factory=list)
+
+

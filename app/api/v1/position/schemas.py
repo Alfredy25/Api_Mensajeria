@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from app.api.v1.job_role.schemas import JobDto, JobCreate, JobUpdate
 from app.api.v1.organization.schemas import OrganizationDto, OrganizationCreate, OrganizationUpdate
 
@@ -8,6 +8,8 @@ class PositionDto(BaseModel):
     id: int
     job_role: JobDto
     organization: OrganizationDto
+
+    model_config = ConfigDict(from_attributes=True)
 
 class PositionCreate(BaseModel):
     job_role: JobCreate
