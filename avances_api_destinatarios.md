@@ -28,13 +28,15 @@ Se actualizó `DISENO_API_DESTINATARIOS.md` para definir:
 - Filtros opcionales, ordenamiento y paginación.
 - Normalización para búsquedas y detección de duplicados.
 - Endpoints posteriores para direcciones, contactos, volantes y cambio de
-  puesto.
+puesto.
 - Sección de cambio de collation a `utf8mb4_0900_ai_ci` para producción.
+
+
 
 ### Schemas (paso 1)
 
 - `ReceiverCreate.position` utiliza `PositionCreateWithReceiver` donde
-  `job_role` es opcional.
+`job_role` es opcional.
 - `ReceiverCreate.title` utiliza `TitleCreate`.
 - Los campos opcionales tienen `default=None`.
 - `model_validator` valida reglas por tipo de destinatario.
@@ -42,6 +44,8 @@ Se actualizó `DISENO_API_DESTINATARIOS.md` para definir:
 - `GOBIERNO` y `PRIVADA` rechazan `full_name` y `title`, requieren `position`.
 - `ReceiverDto` incluye listas vacías por defecto para colecciones.
 - `AddressDto` incluye `municipality`.
+
+
 
 ### Services auxiliares (paso 2)
 
@@ -66,23 +70,29 @@ Ninguno hace `commit`; usan `flush` o delegan al repositorio.
 - `find_by_id(...)` y `find_by_name(...)` implementados.
 - `update(...)` implementado.
 
+
+
 ### ReceiverService (paso 4)
 
 - Cargos genéricos definidos como constantes `JobCreate` a nivel de módulo.
 - `_resolve_persona`: título obligatorio; puesto opcional; `SIN CARGO` cuando
-  hay organización sin cargo.
+hay organización sin cargo.
 - `_resolve_institution`: cargo institucional por tipo cuando no se proporciona.
 - `_check_duplicate`: responde `409 Conflict` con `receiver_id` en header.
 - Normalización de `full_name` (upper) y `email` (lower).
 - Un solo `commit` al final; `rollback` ante cualquier error.
 - Dirección obligatoria; contacto y volante opcionales.
 
+
+
 ### Inyección de dependencias (paso 5)
 
 - Funciones factory en `app/core/dependencies.py` para los 8 repositorios y
-  8 services.
+8 services.
 - `get_receiver_service` inyecta todos los services auxiliares.
 - Todos comparten la misma sesión `db`.
+
+
 
 ### Router (paso 6)
 
@@ -90,13 +100,17 @@ Ninguno hace `commit`; usan `flush` o delegan al repositorio.
 - Responde `201 Created` con `ReceiverDto`.
 - Sin lógica de negocio ni creación manual de repositorios.
 
+
+
 ### Migración
 
 - Primera migración de Alembic creada con todos los modelos de destinatarios.
 - Tablas: `receivers`, `addresses`, `contacts`, `titles`, `job_roles`,
-  `organizations`, `positions`, `volantes`, `receiver_volante`.
+`organizations`, `positions`, `volantes`, `receiver_volante`.
 - Corrección de `server_default=func.now()` en `ReceiverORM.created_at`
-  (se eliminó `timezone.utc` como argumento que causaba error de compilación).
+(se eliminó `timezone.utc` como argumento que causaba error de compilación).
+
+
 
 ### Modelo
 
@@ -105,17 +119,23 @@ Ninguno hace `commit`; usan `flush` o delegan al repositorio.
 - `AddressORM` incluye campo `municipality`.
 - `server_default=func.now()` corregido en `created_at`.
 
+
+
 ## Siguiente paso: búsqueda de destinatarios (pasos 7 y 8)
+
+
 
 ### Paso 7. Repository + Service
 
 - Búsqueda general por texto en `full_name` y `organization.name`.
 - Filtros opcionales: `type_entity`, `organization_name`, `organization_state`,
-  `address_state`.
+`address_state`.
 - Ordenamiento mediante lista cerrada de campos permitidos.
 - Paginación con `page` y `page_size` (máximo 100, defecto 50).
 - Respuesta paginada con `items`, `total`, `page` y `page_size`.
 - Responder `200 OK` con lista vacía si no hay coincidencias.
+
+
 
 ### Paso 8. Router
 
@@ -123,17 +143,23 @@ Ninguno hace `commit`; usan `flush` o delegan al repositorio.
 - `GET /receivers/{receiver_id}` para consulta individual.
 - Router delgado que delega al service.
 
+
+
 ## Pasos posteriores
+
+
 
 ### Paso 9. Pruebas
 
 - Pruebas unitarias de schemas (`ReceiverCreate` validaciones por tipo).
 - Pruebas unitarias de services (lógica de negocio, cargos genéricos,
-  duplicados).
+duplicados).
 - Pruebas de integración de repository con base de datos.
 - Pruebas de endpoints (`POST`, `GET`).
 - Casos para `PERSONA`, `GOBIERNO` y `PRIVADA`.
 - Casos de concurrencia y unicidad.
+
+
 
 ### Extensiones posteriores
 
@@ -141,11 +167,14 @@ Ninguno hace `commit`; usan `flush` o delegan al repositorio.
 - `ReceiverUpdate` y `PATCH /receivers/{receiver_id}`.
 - Auditoría, soft delete, usuarios, roles, permisos, JWT.
 
+
+
 ## Pendientes de base de datos
 
 - Migrar producción a `utf8mb4_0900_ai_ci` (documentado en
-  `DISENO_API_DESTINATARIOS.md`).
+`DISENO_API_DESTINATARIOS.md`).
 - Diseñar la restricción de unicidad para personas con `position_id = null`.
 - Agregar el `CHECK` para abreviaturas de cargos en mayúsculas.
 - Revisar restricciones únicas de direcciones, contactos y relaciones con
-  volantes.
+volantes.
+

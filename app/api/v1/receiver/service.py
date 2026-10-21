@@ -144,85 +144,42 @@ class ReceiverService:
             raise
 
 
-    def list_receivers(self, query: str | None,
-                       page_size: int,
-                       page: int,
-                       order_by: str,
-                       direction: str,
-                       type_entity: str | None = None,
-                       state: str | None = None
+    def list_receivers(self,
+                       query: str | None,
+                       type_entity: EntidadesEnum | None = None,
+                       state: str | None = None,
+                       order_by: Literal["id", "full_name", "state", "name_org"] = "id",
+                       direction: Literal["asc", "desc"] = "asc",
+                       page: int = 1,
+                       page_size: int = 50,
                        ) -> PaginatedReceiver:
 
-        results = select(ReceiverORM).options(
-            selectinload(ReceiverORM.addresses),
-            joinedload(ReceiverORM.title),
-            joinedload(ReceiverORM.position).joinedload(PositionORM.job_role),
-            joinedload(ReceiverORM.position).joinedload(PositionORM.organization),
-            selectinload(ReceiverORM.contacts),
+
+        search_n = query.strip().upper() if query else None
+        address_state_n = state.strip().upper() if state else None
+
+        if page < 1:
+            page = 1
+        if page_size < 1:
+            page_size = 50
+        if page_size > 100:
+            page_size = 100
+
+        offset = (page - 1) * page_size
+
+        total, items = self._repo.search(
+            search = search_n,
+            type_entity = type_entity,
+            state = address_state_n,
+            order_by = order_by,
+            direction = direction,
+            limit=page_size,
+            offset=offset,
         )
-        state_org = None
-        filters = []
-        if query:
-            query = query.upper().strip()
-            filters.append(func.upper(ReceiverORM.full_name).like(f"%{query}%"))
-        if type_entity:
-            filters.append(ReceiverORM.type_entity == type_entity)
-        if state:
-            normalized_state = state.strip().upper()
-            filters.append(
-                (select(AddressORM.id).where(
-                    and_(AddressORM.receiver_id == ReceiverORM.id,
-                         func.upper(AddressORM.state) == normalized_state
-                         )
-                ).exists())
-            )
-            state_org = ReceiverORM.position.organization.state == state
-
-        if state_org:
-            results = select(ReceiverORM).where(
-                or_(
-                    and_(*filters),
-                    state_org
-                )
-            )
-        else:
-            results = select(ReceiverORM).where(
-                and_(
-                    *filters
-                )
-            )
-
-        total = self._db.scalar(
-            select(
-                func.count()
-            ).select_from(results.subquery())
-        ) or 0
 
         total_pages = ceil(total / page_size) if total > 0 else 0
         current_page = 1 if total_pages == 0 else min(page, total_pages)
 
-        if order_by == "id":
-            order_col = ReceiverORM.id
-        elif order_by == "full_name":
-            order_col = func.lower(ReceiverORM.full_name)
-        elif order_by == "name_org":
-            order_col = ReceiverORM.position.organization.name
-        else:
-            order_col = ReceiverORM.addresses.state
-
-        results = results.order_by(
-            order_col.asc() if direction == "asc" else order_col.desc()
-        )
-
-        if total_pages == 0:
-            items: List[ReceiverORM] = []
-        else:
-            start =(current_page - 1) * page_size
-            items: List[ReceiverORM] = list(
-                self._db.scalars(
-                    results.limit(page_size).offset(start)
-                ).all()
-            )
         has_prev = current_page > 1
         has_next = current_page < total_pages if total_pages > 0 else False
 
@@ -235,8 +192,11 @@ class ReceiverService:
             has_next = has_next,
             order_by = order_by,
             direction = direction,
-            search=query,
-            items=[ReceiverDto.model_validate(receiver) for receiver in items],
+            search=search_n,
+            items=[
+                ReceiverDto.model_validate(receiver, from_attributes=True)
+                for receiver in items
+            ],
         )
 
 

@@ -26,7 +26,7 @@ def list_receivers(
             pattern=r"^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$", # Desde el inicio de la cadena (^) hasta el final ($), solo se permiten letras mayúsculas, minúsculas, vocales acentuadas, ñ, ü y espacios. Debe existir al menos un carácter (+).
             ),
         page_size: int = Query(
-            default=20, ge=10, le=50,
+            default=50, ge=5, le=100,
             description="Numero de resultados (10-50)"),
         page: int = Query(
             default=1,
