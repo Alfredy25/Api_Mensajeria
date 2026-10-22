@@ -1,10 +1,11 @@
-from typing import Optional, Literal
+from typing import Optional, Literal, Annotated
 
 from fastapi import APIRouter, Depends, status, Query
 
-from app.api.v1.receiver.schemas import ReceiverDto, ReceiverCreate, PaginatedReceiver
+from app.api.v1.receiver.schemas import ReceiverDto, ReceiverCreate, PaginatedReceiver, normalize_search
 from app.api.v1.receiver.service import ReceiverService
 from app.core.dependencies import get_receiver_service
+from pydantic import AfterValidator
 
 router = APIRouter(prefix="/receivers", tags=["receivers"])
 
@@ -18,21 +19,27 @@ def create_receiver(payload: ReceiverCreate,
 
 @router.get("/", response_model= PaginatedReceiver)
 def list_receivers(
-        query: Optional[str] = Query(
-            default=None,
-            description="Texto para buscar por fullname y name de organization",
-            alias="search",
-            min_length=3, max_length=40,
-            pattern=r"^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$", # Desde el inicio de la cadena (^) hasta el final ($), solo se permiten letras mayúsculas, minúsculas, vocales acentuadas, ñ, ü y espacios. Debe existir al menos un carácter (+).
-            ),
+        query: Optional[
+            Annotated[
+                str,
+                Query(
+                    alias="search",
+                    description="Texto para buscar por fullname y name de organization",
+                    max_length=40,
+                    # Letras, dígitos, espacios, punto y guion. Ejemplo: S.A. de C.V.
+                    pattern=r"^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ0-9.\s-]+$"
+                ),
+                AfterValidator(normalize_search)
+            ]
+        ] = None,
         page_size: int = Query(
             default=50, ge=5, le=100,
-            description="Numero de resultados (10-50)"),
+            description="Numero de resultados (5-50)"),
         page: int = Query(
             default=1,
-            ge=1, # Desde el inicio de la cadena (^) hasta el final ($), solo se permiten letras mayúsculas, minúsculas, vocales acentuadas, ñ, ü y espacios. Debe existir al menos un carácter (+).gt=1,
+            ge=1,
             description="Número de página (>=1)"),
-        order_by: Literal["id","full_name", "state", "name_org"] = Query(
+        order_by: Literal["id","full_name", "name_org", "created_at"] = Query(
             default="id",
             description="Campo de orden"),
         direction: Literal["desc", "asc"] = Query(
@@ -43,7 +50,7 @@ def list_receivers(
             description="Tipo de entidad a buscar"),
         state: Optional[str] = Query(
             default=None,
-            description="Estado de la republica mexicana para address y estado de la organizacion"),
+            description="Estado de la republica mexicana para address"),
         service: ReceiverService = Depends(get_receiver_service)
 ) -> PaginatedReceiver:
     return service.list_receivers(

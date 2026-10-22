@@ -148,7 +148,7 @@ class ReceiverService:
                        query: str | None,
                        type_entity: EntidadesEnum | None = None,
                        state: str | None = None,
-                       order_by: Literal["id", "full_name", "state", "name_org"] = "id",
+                       order_by: Literal["id", "full_name", "name_org", "created_at"] = "id",
                        direction: Literal["asc", "desc"] = "asc",
                        page: int = 1,
                        page_size: int = 50,
@@ -165,26 +165,25 @@ class ReceiverService:
         if page_size > 100:
             page_size = 100
 
-        offset = (page - 1) * page_size
-
-        total, items = self._repo.search(
+        dict_totals, items = self._repo.search(
             search = search_n,
             type_entity = type_entity,
             state = address_state_n,
             order_by = order_by,
             direction = direction,
             limit=page_size,
-            offset=offset,
+            page=page,
         )
 
-        total_pages = ceil(total / page_size) if total > 0 else 0
-        current_page = 1 if total_pages == 0 else min(page, total_pages)
+        current_page = dict_totals["current_page"]
+        total = dict_totals["total"]
+        total_pages = dict_totals["total_pages"]
 
-        has_prev = current_page > 1
+        has_prev = current_page > 1 and total > 0
         has_next = current_page < total_pages if total_pages > 0 else False
 
         return PaginatedReceiver(
-            page=page,
+            page=current_page,
             page_size=page_size,
             total = total,
             total_pages = total_pages,
@@ -198,20 +197,6 @@ class ReceiverService:
                 for receiver in items
             ],
         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     # ------------------------------------------------------------------
     # Métodos internos

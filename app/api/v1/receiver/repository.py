@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from math import ceil
 from typing import Any
 
 from sqlalchemy import select, func, and_, or_
@@ -44,8 +45,8 @@ class ReceiverRepository(ABC):
                order_by: str,
                direction: str,
                limit: int,
-               offset: int,
-               ) -> tuple[int, list[ReceiverORM]]:
+               page: int,
+               ) -> tuple[dict[str, int], list[ReceiverORM]]:
         ...
 
 
@@ -73,8 +74,8 @@ class ReceiverRepositoryImpl(ReceiverRepository):
                order_by: str,
                direction: str,
                limit: int,
-               offset: int,
-               ) -> tuple[int,list[ReceiverORM]]:
+               page: int,
+               ) -> tuple[dict[str, int],list[ReceiverORM]]:
         filters: list = []
 
         stmt = (select(ReceiverORM)
@@ -129,43 +130,43 @@ class ReceiverRepositoryImpl(ReceiverRepository):
         if filters:
             count_stmt = count_stmt.where(and_(*filters))
         total = self._db.scalar(count_stmt) or 0
+        total_pages = ceil(total/limit) if total > 0 else 0
+        current_page = 1 if total_pages == 0 else min(page, total_pages)
+        offset = (current_page - 1) * limit
 
         if order_by == "full_name":
             order_col = func.upper(ReceiverORM.full_name)
         elif order_by == "name_org":
-            stmt = (
-                stmt
-                .outerjoin(
-                    PositionORM,
-                    ReceiverORM.position_id == PositionORM.id
-                )
-                .outerjoin(
-                    OrganizationORM,
-                    PositionORM.organization_id == OrganizationORM.id
-                )
+            org_name = (
+                select(OrganizationORM.name)
+                .join(PositionORM, PositionORM.organization_id == OrganizationORM.id)
+                .where(PositionORM.id == ReceiverORM.position_id)
+                .scalar_subquery()
             )
-            order_col = func.upper(OrganizationORM.name)
-        elif order_by == "state":
-            order_col = ReceiverORM.id
+            order_col = func.upper(org_name)
+        elif order_by == "created_at":
+            order_col = ReceiverORM.created_at
         else:
             order_col = ReceiverORM.id
 
-        stmt = stmt.order_by(
-            order_col.asc() if direction == "asc" else order_col.desc()
-        )
+
+        order_primary = order_col.asc() if direction == "asc" else order_col.desc()
+        if order_by == "id":
+            stmt = stmt.order_by(order_primary)
+        else:
+            order_secondary = (
+                ReceiverORM.id.asc() if direction == "asc" else ReceiverORM.id.desc()
+            )
+            stmt = stmt.order_by(
+                order_primary,
+                order_secondary
+            )
         stmt = stmt.limit(limit).offset(offset)
         items = list(
             self._db.scalars(stmt).unique().all()
         )
 
-        return int(total), items
-
-
-
-
-
-
-
+        return {"total": int(total), "total_pages": int(total_pages),"current_page": int(current_page)}, items
 
 
     def create(self, type_entity: EntidadesEnum, full_name: str | None,

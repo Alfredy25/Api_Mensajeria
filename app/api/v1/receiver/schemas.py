@@ -75,9 +75,15 @@ class PaginatedReceiver(BaseModel):
     total_pages: int
     has_prev: bool
     has_next: bool
-    order_by: Literal["id","full_name", "state", "name_org"]
+    order_by: Literal["id", "full_name", "name_org", "created_at"]
     direction: Literal["asc", "desc"]
     search: Optional[str] = None
     items: List[ReceiverDto] = Field(default_factory=list)
 
 
+def normalize_search(value: str) -> str:
+    """Recorta espacios y exige al menor 3 caracteres útiles"""
+    normalized = value.strip()
+    if len(normalized) < 3:
+        raise ValueError("Search debe tener al menos 3 caracteres")
+    return normalized
