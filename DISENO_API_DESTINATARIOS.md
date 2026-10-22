@@ -109,49 +109,61 @@ Una persona sin cargo ni organización no tendrá puesto. Los destinatarios
 
 
 
-### Endpoint previsto
+### Endpoint
 
 ```http
 GET /receivers?search=juanito
 ```
 
-`search` será una búsqueda general y consultará coincidencias parciales en:
+`search` es opcional. Cuando se envía, consulta coincidencias parciales en
+cualquiera de estos campos:
 
 - `ReceiverORM.full_name`
-- `OrganizationORM.name`, mediante la relación con `PositionORM`
+- `OrganizationORM.name`, mediante el `position_id` del destinatario
 
-También se admitirán filtros opcionales:
+Basta con que el texto coincida en uno de los dos. No hay un filtro separado
+para el nombre de la organización.
+
+El texto se recorta y se compara en mayúsculas. Después de quitar los espacios
+de los extremos debe tener al menos 3 caracteres, y como máximo 40. Se permiten
+letras, dígitos, espacios, punto y guion.
+
+Los demás parámetros también son opcionales:
 
 ```http
-GET /receivers?type_entity=PERSONA&name=JUAN&address_state=JALISCO&sort_by=full_name&sort_order=asc&page=1&page_size=50
+GET /receivers?search=juan&type_entity=PERSONA&state=JALISCO&order_by=full_name&direction=asc&page=1&page_size=50
 ```
 
-- `type_entity`: tipo de destinatario.
-- `name`: coincidencia parcial del nombre normalizado.
-- `organization_name`: coincidencia parcial del nombre de la organización.
-- `organization_state`: estado al que pertenece la organización.
-- `address_state`: estado de alguna dirección asociada al destinatario.
-- `sort_by`: campo de ordenamiento permitido.
-- `sort_order`: `asc` o `desc`.
-- `page`: número de página.
-- `page_size`: cantidad de resultados por página; será `50` por defecto y
-  tendrá un máximo de `100`.
+- `type_entity`: `PERSONA`, `GOBIERNO` o `PRIVADA`.
+- `state`: estado de alguna dirección del destinatario. Si tiene al menos una
+  dirección en ese estado, entra una sola vez. No filtra el estado de la
+  organización.
+- `order_by`: campo de ordenamiento permitido.
+- `direction`: `asc` o `desc`. El valor por defecto es `asc`.
+- `page`: número de página. El mínimo y el valor por defecto son `1`.
+- `page_size`: cantidad de resultados por página. El valor por defecto es
+  `50`, el mínimo es `5` y el máximo es `100`.
 
-Solamente se aplicarán los filtros enviados y todos se combinarán mediante
-`AND`. Los filtros de dirección se implementarán mediante `EXISTS`, o una
-estrategia equivalente, para no duplicar destinatarios que tengan varias
-direcciones coincidentes.
+Solamente se aplican los filtros enviados y todos se combinan mediante `AND`.
+`state` se implementa mediante `EXISTS`, para no duplicar destinatarios que
+tengan varias direcciones en el mismo estado.
 
-`sort_by` utilizará una lista cerrada de campos para evitar construir consultas
-con nombres de columna arbitrarios. Inicialmente se permitirán:
+`order_by` utiliza una lista cerrada de campos para evitar construir consultas
+con nombres de columna arbitrarios. Los valores permitidos son:
 
 - `id`
 - `full_name`
-- `type_entity`
+- `name_org`, el nombre de la organización del puesto
 - `created_at`
 
-El orden predeterminado será `created_at desc`. Todo ordenamiento agregará `id`
-como segundo criterio para obtener resultados estables entre páginas.
+El orden predeterminado es `id` ascendente. `created_at` se puede solicitar,
+por ejemplo `order_by=created_at&direction=desc`, y no es el valor por defecto.
+Cualquier orden distinto de `id` agrega `id` como segundo criterio, en la misma
+dirección, para obtener resultados estables entre páginas.
+
+Si la página pedida es mayor que la última y sí hay resultados, la respuesta
+devuelve esa última página y sus elementos. Si no hay coincidencias, `page`
+queda en `1` y `items` llega vacío.
 
 
 
@@ -169,7 +181,13 @@ Ejemplo conceptual:
   "items": [],
   "total": 0,
   "page": 1,
-  "page_size": 50
+  "page_size": 50,
+  "total_pages": 0,
+  "has_prev": false,
+  "has_next": false,
+  "order_by": "id",
+  "direction": "asc",
+  "search": null
 }
 ```
 

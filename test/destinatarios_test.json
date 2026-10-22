@@ -1,0 +1,665 @@
+[
+    {
+      "type_entity": "GOBIERNO",
+      "position": {
+        "job_role": {
+          "abbreviation": "PDTE. MUNICIPAL",
+          "meaning": "Presidente Municipal"
+        },
+        "organization": {
+          "name": "H. AYUNTAMIENTO DE PALENQUE",
+          "state": "CHIAPAS"
+        }
+      },
+      "address": {
+        "street": "CALLE 5 DE MAYO",
+        "num_street": "18",
+        "colony": "CENTRO",
+        "municipality": "PALENQUE",
+        "city": "PALENQUE",
+        "state": "CHIAPAS",
+        "postal_code": "29960",
+        "country": "MÉXICO",
+        "address_reference": "FRENTE A LA PLAZA PRINCIPAL"
+      },
+      "contact": {
+        "phone": "9163451200",
+        "ext": "102"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00210"
+      }
+    },
+    {
+      "type_entity": "GOBIERNO",
+      "position": {
+        "job_role": {
+          "abbreviation": "PDTA. MUNICIPAL",
+          "meaning": "Presidenta Municipal"
+        },
+        "organization": {
+          "name": "H. AYUNTAMIENTO DE COSÍO",
+          "state": "AGUASCALIENTES"
+        }
+      },
+      "address": {
+        "street": "CALLE HIDALGO",
+        "num_street": "12",
+        "colony": "CENTRO",
+        "municipality": "COSÍO",
+        "city": "COSÍO",
+        "state": "AGUASCALIENTES",
+        "postal_code": "20460",
+        "country": "MÉXICO"
+      },
+      "contact": {
+        "phone": "4586902104"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00210"
+      }
+    },
+    {
+      "type_entity": "GOBIERNO",
+      "position": {
+        "job_role": {
+          "abbreviation": "SRIO.",
+          "meaning": "Secretario"
+        },
+        "organization": {
+          "name": "TESORERÍA MUNICIPAL DE SALVATIERRA",
+          "state": "GUANAJUATO"
+        }
+      },
+      "address": {
+        "street": "CALLE BENITO JUÁREZ",
+        "num_street": "220",
+        "colony": "ZONA CENTRO",
+        "municipality": "SALVATIERRA",
+        "city": "SALVATIERRA",
+        "state": "GUANAJUATO",
+        "postal_code": "38900",
+        "country": "MÉXICO"
+      },
+      "contact": {
+        "phone": "4666621140",
+        "ext": "210"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00211"
+      }
+    },
+    {
+      "type_entity": "GOBIERNO",
+      "position": {
+        "job_role": {
+          "abbreviation": "SRIA.",
+          "meaning": "Secretaria"
+        },
+        "organization": {
+          "name": "TESORERÍA MUNICIPAL DE DOLORES HIDALGO",
+          "state": "GUANAJUATO"
+        }
+      },
+      "address": {
+        "street": "CALLE NUEVO LEÓN",
+        "num_street": "1",
+        "colony": "CENTRO",
+        "municipality": "DOLORES HIDALGO",
+        "city": "DOLORES HIDALGO",
+        "state": "GUANAJUATO",
+        "postal_code": "37800",
+        "country": "MÉXICO",
+        "address_reference": "PALACIO MUNICIPAL"
+      },
+      "contact": {
+        "phone": "4181820050",
+        "ext": "115"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00211"
+      }
+    },
+    {
+      "type_entity": "GOBIERNO",
+      "position": {
+        "job_role": {
+          "abbreviation": "TIT. DEL O.I.C.",
+          "meaning": "Titular del Órgano Interno de Control"
+        },
+        "organization": {
+          "name": "ÓRGANO INTERNO DE CONTROL DEL MUNICIPIO DE OCOTLÁN",
+          "state": "JALISCO"
+        }
+      },
+      "address": {
+        "street": "AV. LÓPEZ MATEOS",
+        "num_street": "450",
+        "colony": "CENTRO",
+        "municipality": "OCOTLÁN",
+        "city": "OCOTLÁN",
+        "state": "JALISCO",
+        "postal_code": "47800",
+        "country": "MÉXICO"
+      },
+      "contact": {
+        "phone": "3929253010",
+        "ext": "204"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00212"
+      }
+    },
+    {
+      "type_entity": "GOBIERNO",
+      "position": {
+        "job_role": {
+          "abbreviation": "DIR. GRAL.",
+          "meaning": "Director General"
+        },
+        "organization": {
+          "name": "DIRECCIÓN DE OBRAS PÚBLICAS DEL MUNICIPIO DE PACHUCA",
+          "state": "HIDALGO"
+        }
+      },
+      "address": {
+        "street": "AV. REVOLUCIÓN",
+        "num_street": "1200",
+        "colony": "PERIODISTAS",
+        "municipality": "PACHUCA DE SOTO",
+        "city": "PACHUCA DE SOTO",
+        "state": "HIDALGO",
+        "postal_code": "42060",
+        "country": "MÉXICO",
+        "address_reference": "EDIFICIO DE OBRAS PÚBLICAS"
+      },
+      "contact": {
+        "phone": "7717178000",
+        "ext": "3310"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00212"
+      }
+    },
+    {
+      "type_entity": "GOBIERNO",
+      "position": {
+        "job_role": {
+          "abbreviation": "DIR.A GRAL.",
+          "meaning": "Directora General"
+        },
+        "organization": {
+          "name": "CONTRALORÍA MUNICIPAL DE MORELIA",
+          "state": "MICHOACÁN"
+        }
+      },
+      "address": {
+        "street": "AV. MADERO PONIENTE",
+        "num_street": "500",
+        "colony": "CENTRO",
+        "municipality": "MORELIA",
+        "city": "MORELIA",
+        "state": "MICHOACÁN",
+        "postal_code": "58000",
+        "country": "MÉXICO"
+      },
+      "contact": {
+        "phone": "4433124500",
+        "ext": "118"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00213"
+      }
+    },
+    {
+      "type_entity": "GOBIERNO",
+      "position": {
+        "job_role": {
+          "abbreviation": "PDTE. MUNICIPAL",
+          "meaning": "Presidente Municipal"
+        },
+        "organization": {
+          "name": "H. AYUNTAMIENTO DE TEQUILA",
+          "state": "JALISCO"
+        }
+      },
+      "address": {
+        "street": "CALLE JOSÉ CUERVO",
+        "num_street": "25",
+        "colony": "CENTRO",
+        "municipality": "TEQUILA",
+        "city": "TEQUILA",
+        "state": "JALISCO",
+        "postal_code": "46400",
+        "country": "MÉXICO",
+        "address_reference": "SALIDA A GUADALAJARA"
+      },
+      "contact": {
+        "phone": "3747420014"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00213"
+      }
+    },
+    {
+      "type_entity": "PERSONA",
+      "title": {
+        "abbreviation": "LIC.",
+        "meaning": "Licenciado o Licenciada"
+      },
+      "full_name": "ROCÍO GUADALUPE NAVARRETE CAMPOS",
+      "email": "rocio.navarrete@queretaro.gob.mx",
+      "position": {
+        "job_role": {
+          "abbreviation": "SRIA.",
+          "meaning": "Secretaria"
+        },
+        "organization": {
+          "name": "SECRETARÍA DE LA CONTRALORÍA DEL ESTADO DE QUERÉTARO",
+          "state": "QUERÉTARO"
+        }
+      },
+      "address": {
+        "street": "AV. 5 DE FEBRERO",
+        "num_street": "1500",
+        "colony": "CENTRO",
+        "municipality": "QUERÉTARO",
+        "city": "SANTIAGO DE QUERÉTARO",
+        "state": "QUERÉTARO",
+        "postal_code": "76000",
+        "country": "MÉXICO"
+      },
+      "contact": {
+        "phone": "4422271800",
+        "ext": "1520"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00214"
+      }
+    },
+    {
+      "type_entity": "PERSONA",
+      "title": {
+        "abbreviation": "DR.",
+        "meaning": "Doctor"
+      },
+      "full_name": "HÉCTOR MANUEL CORDERO LUNA",
+      "email": "hector.cordero@asej.gob.mx",
+      "position": {
+        "job_role": {
+          "abbreviation": "DIR. GRAL.",
+          "meaning": "Director General"
+        },
+        "organization": {
+          "name": "AUDITORÍA SUPERIOR DEL ESTADO DE JALISCO",
+          "state": "JALISCO"
+        }
+      },
+      "address": {
+        "street": "CALLE PEDRO MORENO",
+        "num_street": "281",
+        "colony": "CENTRO",
+        "municipality": "GUADALAJARA",
+        "city": "GUADALAJARA",
+        "state": "JALISCO",
+        "postal_code": "44100",
+        "country": "MÉXICO"
+      },
+      "contact": {
+        "phone": "3336684200",
+        "ext": "2104"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00214"
+      }
+    },
+    {
+      "type_entity": "PERSONA",
+      "title": {
+        "abbreviation": "DRA.",
+        "meaning": "Doctora"
+      },
+      "full_name": "NATALIA ITZEL MORALES PEÑA",
+      "position": {
+        "job_role": {
+          "abbreviation": "DIR.A GRAL.",
+          "meaning": "Directora General"
+        },
+        "organization": {
+          "name": "SECRETARÍA DE LA CONTRALORÍA GENERAL DEL ESTADO DE YUCATÁN",
+          "state": "YUCATÁN"
+        }
+      },
+      "address": {
+        "street": "CALLE 60",
+        "num_street": "498",
+        "colony": "CENTRO",
+        "municipality": "MÉRIDA",
+        "city": "MÉRIDA",
+        "state": "YUCATÁN",
+        "postal_code": "97000",
+        "country": "MÉXICO"
+      },
+      "contact": {
+        "phone": "9999303100",
+        "ext": "405"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00215"
+      }
+    },
+    {
+      "type_entity": "PERSONA",
+      "title": {
+        "abbreviation": "MTRO.",
+        "meaning": "Maestro"
+      },
+      "full_name": "RAÚL IGNACIO BELTRÁN SOSA",
+      "position": {
+        "job_role": {
+          "abbreviation": "TIT. DEL O.I.C.",
+          "meaning": "Titular del Órgano Interno de Control"
+        },
+        "organization": {
+          "name": "H. AYUNTAMIENTO DE HERMOSILLO",
+          "state": "SONORA"
+        }
+      },
+      "address": {
+        "street": "BLVD. LUIS ENCINAS",
+        "num_street": "340",
+        "colony": "SAN BENITO",
+        "municipality": "HERMOSILLO",
+        "city": "HERMOSILLO",
+        "state": "SONORA",
+        "postal_code": "83190",
+        "country": "MÉXICO"
+      },
+      "contact": {
+        "phone": "6622895000",
+        "ext": "221"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00215"
+      }
+    },
+    {
+      "type_entity": "PERSONA",
+      "title": {
+        "abbreviation": "MTRA.",
+        "meaning": "Maestra"
+      },
+      "full_name": "CLAUDIA ESTHER VARGAS NÚÑEZ",
+      "email": "presidencia@leon.gob.mx",
+      "position": {
+        "job_role": {
+          "abbreviation": "PDTA. MUNICIPAL",
+          "meaning": "Presidenta Municipal"
+        },
+        "organization": {
+          "name": "H. AYUNTAMIENTO DE LEÓN",
+          "state": "GUANAJUATO"
+        }
+      },
+      "address": {
+        "street": "BLVD. ADOLFO LÓPEZ MATEOS",
+        "num_street": "1810",
+        "colony": "LOS GAVILANES",
+        "municipality": "LEÓN",
+        "city": "LEÓN",
+        "state": "GUANAJUATO",
+        "postal_code": "37270",
+        "country": "MÉXICO"
+      },
+      "contact": {
+        "phone": "4777884400",
+        "ext": "100"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00216"
+      }
+    },
+    {
+      "type_entity": "PERSONA",
+      "title": {
+        "abbreviation": "ARQ.",
+        "meaning": "Arquitecto o Arquitecta"
+      },
+      "full_name": "DIEGO ARMANDO FUENTES LEÓN",
+      "position": {
+        "job_role": {
+          "abbreviation": "DIR. GRAL.",
+          "meaning": "Director General"
+        },
+        "organization": {
+          "name": "INSTITUTO DE INFRAESTRUCTURA FÍSICA EDUCATIVA DEL ESTADO DE PUEBLA",
+          "state": "PUEBLA"
+        }
+      },
+      "address": {
+        "street": "AV. 11 SUR",
+        "num_street": "2101",
+        "colony": "CENTRO HISTÓRICO",
+        "municipality": "PUEBLA",
+        "city": "PUEBLA",
+        "state": "PUEBLA",
+        "postal_code": "72000",
+        "country": "MÉXICO"
+      },
+      "contact": {
+        "phone": "2222294500",
+        "ext": "318"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00216"
+      }
+    },
+    {
+      "type_entity": "PERSONA",
+      "title": {
+        "abbreviation": "C.P.",
+        "meaning": "Contador Público o Contadora Pública"
+      },
+      "full_name": "LORENA PATRICIA AGUILAR MEZA",
+      "email": "lorena.aguilar@tabasco.gob.mx",
+      "position": {
+        "job_role": {
+          "abbreviation": "SRIA.",
+          "meaning": "Secretaria"
+        },
+        "organization": {
+          "name": "SECRETARÍA DE FINANZAS DEL ESTADO DE TABASCO",
+          "state": "TABASCO"
+        }
+      },
+      "address": {
+        "street": "AV. PASEO DE LA SIERRA",
+        "num_street": "435",
+        "colony": "PRIMERO DE MAYO",
+        "municipality": "CENTRO",
+        "city": "VILLAHERMOSA",
+        "state": "TABASCO",
+        "postal_code": "86190",
+        "country": "MÉXICO"
+      },
+      "contact": {
+        "phone": "9933103300"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00217"
+      }
+    },
+    {
+      "type_entity": "PERSONA",
+      "title": {
+        "abbreviation": "LIC.",
+        "meaning": "Licenciado o Licenciada"
+      },
+      "full_name": "ANDRÉS GUILLERMO TREJO SALAZAR",
+      "position": {
+        "job_role": {
+          "abbreviation": "PDTE. MUNICIPAL",
+          "meaning": "Presidente Municipal"
+        },
+        "organization": {
+          "name": "H. AYUNTAMIENTO DE TOLUCA",
+          "state": "ESTADO DE MÉXICO"
+        }
+      },
+      "address": {
+        "street": "AV. LERDO PONIENTE",
+        "num_street": "300",
+        "colony": "CENTRO",
+        "municipality": "TOLUCA",
+        "city": "TOLUCA",
+        "state": "ESTADO DE MÉXICO",
+        "postal_code": "50000",
+        "country": "MÉXICO",
+        "address_reference": "PALACIO MUNICIPAL PLANTA BAJA"
+      },
+      "contact": {
+        "phone": "7222261300",
+        "ext": "105"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00217"
+      }
+    },
+    {
+      "type_entity": "PERSONA",
+      "title": {
+        "abbreviation": "DRA.",
+        "meaning": "Doctora"
+      },
+      "full_name": "CAMILA ROCÍO HERRERA BUSTOS",
+      "position": {
+        "job_role": {
+          "abbreviation": "TIT. DEL O.I.C.",
+          "meaning": "Titular del Órgano Interno de Control"
+        },
+        "organization": {
+          "name": "UNIVERSIDAD AUTÓNOMA DE CHIHUAHUA",
+          "state": "CHIHUAHUA"
+        }
+      },
+      "address": {
+        "street": "CALLE ESCORZA",
+        "num_street": "900",
+        "colony": "CENTRO",
+        "municipality": "CHIHUAHUA",
+        "city": "CHIHUAHUA",
+        "state": "CHIHUAHUA",
+        "postal_code": "31000",
+        "country": "MÉXICO"
+      },
+      "contact": {
+        "phone": "6144391500",
+        "ext": "4120"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00218"
+      }
+    },
+    {
+      "type_entity": "PERSONA",
+      "title": {
+        "abbreviation": "C.P.",
+        "meaning": "Contador Público o Contadora Pública"
+      },
+      "full_name": "EMILIO JONATHAN RUIZ CALDERÓN",
+      "position": {
+        "job_role": {
+          "abbreviation": "SRIO.",
+          "meaning": "Secretario"
+        },
+        "organization": {
+          "name": "SECRETARÍA DE ADMINISTRACIÓN DEL ESTADO DE COLIMA",
+          "state": "COLIMA"
+        }
+      },
+      "address": {
+        "street": "CALLE GABINO BARREDA",
+        "num_street": "546",
+        "colony": "CENTRO",
+        "municipality": "COLIMA",
+        "city": "COLIMA",
+        "state": "COLIMA",
+        "postal_code": "28000",
+        "country": "MÉXICO"
+      },
+      "contact": {
+        "phone": "3123162000",
+        "ext": "230"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00218"
+      }
+    },
+    {
+      "type_entity": "PERSONA",
+      "title": {
+        "abbreviation": "MTRA.",
+        "meaning": "Maestra"
+      },
+      "full_name": "SOFÍA ELENA PADILLA CRUZ",
+      "position": {
+        "job_role": {
+          "abbreviation": "DIR.A GRAL.",
+          "meaning": "Directora General"
+        },
+        "organization": {
+          "name": "COLEGIO DE BACHILLERES DEL ESTADO DE SINALOA",
+          "state": "SINALOA"
+        }
+      },
+      "address": {
+        "street": "CALLE IGNACIO ZARAGOZA",
+        "num_street": "418",
+        "colony": "CENTRO",
+        "municipality": "CULIACÁN",
+        "city": "CULIACÁN",
+        "state": "SINALOA",
+        "postal_code": "80000",
+        "country": "MÉXICO"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00219"
+      }
+    },
+    {
+      "type_entity": "PERSONA",
+      "title": {
+        "abbreviation": "ARQ.",
+        "meaning": "Arquitecto o Arquitecta"
+      },
+      "full_name": "JOSÉ LUIS MENDOZA ORTEGA",
+      "email": "jose.mendoza@veracruz.gob.mx",
+      "position": {
+        "job_role": {
+          "abbreviation": "DIR. GRAL.",
+          "meaning": "Director General"
+        },
+        "organization": {
+          "name": "INSTITUTO DE INFRAESTRUCTURA EDUCATIVA DEL ESTADO DE VERACRUZ",
+          "state": "VERACRUZ"
+        }
+      },
+      "address": {
+        "street": "CALLE ZARAGOZA",
+        "num_street": "20",
+        "colony": "CENTRO",
+        "municipality": "XALAPA",
+        "city": "XALAPA",
+        "state": "VERACRUZ",
+        "postal_code": "91000",
+        "country": "MÉXICO"
+      },
+      "contact": {
+        "phone": "2288417200",
+        "ext": "414"
+      },
+      "volante": {
+        "name": "VCS-26-131000-00219"
+      }
+    }
+  ]

@@ -2,17 +2,17 @@
 
 ## Última actualización
 
-12 de octubre de 2026.
+21 de octubre de 2026.
 
 ## Punto actual
 
-Se completó la creación de destinatarios (`POST /receivers`). El endpoint está
-funcional y probado manualmente para los tres tipos de entidad: `PERSONA`,
-`GOBIERNO` y `PRIVADA`.
+Ya se puede buscar destinatarios con `GET /receivers`. El listado filtra,
+ordena y pagina. Si no hay coincidencias responde `200 OK` con `items` vacío.
 
-El siguiente trabajo será implementar la búsqueda de destinatarios
-(`GET /receivers`) con filtros, ordenamiento y paginación. Después de la
-búsqueda se crearán las pruebas unitarias y de integración.
+Falta probar ese listado. Después conviene partir `ReceiverRepositoryImpl.search`,
+porque el método concentra filtros, conteo, página y orden.
+
+`GET /receivers/{receiver_id}` todavía no está implementado.
 
 ## Trabajo completado
 
@@ -121,47 +121,47 @@ hay organización sin cargo.
 
 
 
-## Siguiente paso: búsqueda de destinatarios (pasos 7 y 8)
+## Búsqueda de destinatarios (pasos 7 y 8)
+
+`GET /receivers` ya lista destinatarios. El router delega en el service y el
+repositorio calcula la página después de contar.
+
+- `search` es opcional. Coincide con `full_name` o con el nombre de la
+organización. Tras el `strip` exige al menos 3 caracteres y acepta letras,
+dígitos, espacios, punto y guion.
+- `type_entity` filtra `PERSONA`, `GOBIERNO` o `PRIVADA`.
+- `state` usa el estado de alguna dirección del destinatario, con `EXISTS`.
+- `order_by` acepta `id`, `full_name`, `name_org` y `created_at`. El default
+es `id` ascendente. Si el orden no es `id`, se desempata con `id`.
+- El nombre de la organización se ordena con una subconsulta sobre
+`position_id`, sin un segundo join.
+- `page_size` va de 5 a 100 y el default es 50.
+- Si la página pedida pasa de la última, se devuelve la última página. Sin
+coincidencias, `items` queda vacío y `total_pages` es 0.
+
+`DISENO_API_DESTINATARIOS.md` quedó alineado con este contrato.
+
+Pendiente dentro de este paso: acortar `search` en el repository. La consulta
+individual `GET /receivers/{receiver_id}` sigue fuera de este avance.
 
 
 
-### Paso 7. Repository + Service
+## Siguiente paso: pruebas
 
-- Búsqueda general por texto en `full_name` y `organization.name`.
-- Filtros opcionales: `type_entity`, `organization_name`, `organization_state`,
-`address_state`.
-- Ordenamiento mediante lista cerrada de campos permitidos.
-- Paginación con `page` y `page_size` (máximo 100, defecto 50).
-- Respuesta paginada con `items`, `total`, `page` y `page_size`.
-- Responder `200 OK` con lista vacía si no hay coincidencias.
+- Pruebas unitarias de schemas (`ReceiverCreate` y `normalize_search`).
+- Pruebas unitarias del service de listado: página fuera de rango, lista vacía
+y orden.
+- Pruebas de integración de `search` con base de datos.
+- Pruebas del endpoint `GET /receivers` para `PERSONA`, `GOBIERNO` y `PRIVADA`.
+- Acortar `ReceiverRepositoryImpl.search`.
+- Implementar `GET /receivers/{receiver_id}`.
 
-
-
-### Paso 8. Router
-
-- `GET /receivers` con búsqueda, filtros y paginación como query params.
-- `GET /receivers/{receiver_id}` para consulta individual.
-- Router delgado que delega al service.
+También siguen pendientes las pruebas del alta que ya estaban previstas:
+duplicados, cargos genéricos y concurrencia.
 
 
 
 ## Pasos posteriores
-
-
-
-### Paso 9. Pruebas
-
-- Pruebas unitarias de schemas (`ReceiverCreate` validaciones por tipo).
-- Pruebas unitarias de services (lógica de negocio, cargos genéricos,
-duplicados).
-- Pruebas de integración de repository con base de datos.
-- Pruebas de endpoints (`POST`, `GET`).
-- Casos para `PERSONA`, `GOBIERNO` y `PRIVADA`.
-- Casos de concurrencia y unicidad.
-
-
-
-### Extensiones posteriores
 
 - Endpoints para direcciones, contactos, volantes y cambio de puesto.
 - `ReceiverUpdate` y `PATCH /receivers/{receiver_id}`.
