@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from math import ceil
-from typing import Any
 
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import Session, selectinload, joinedload
@@ -76,91 +75,20 @@ class ReceiverRepositoryImpl(ReceiverRepository):
                limit: int,
                page: int,
                ) -> tuple[dict[str, int],list[ReceiverORM]]:
-        filters: list = []
 
-        stmt = (select(ReceiverORM)
-        .options(
-            selectinload(ReceiverORM.addresses),
-            joinedload(ReceiverORM.title),
-            joinedload(ReceiverORM.position).joinedload(PositionORM.job_role),
-            joinedload(ReceiverORM.position).joinedload(PositionORM.organization),
-            selectinload(ReceiverORM.contacts),
-            selectinload(ReceiverORM.volantes)
-        ))
-
-        if search:
-            filters.append(
-                or_(
-                    func.upper(ReceiverORM.full_name).like(f"%{search}%"),
-                    (
-                        select(PositionORM.id)
-                        .join(
-                            OrganizationORM,
-                            OrganizationORM.id == PositionORM.organization_id
-                        ).where(
-                            PositionORM.id == ReceiverORM.position_id,
-                            func.upper(OrganizationORM.name).like(f"%{search}%")
-                        ).exists()
-                    )
-
-                )
-            )
-
-        if type_entity:
-            filters.append(ReceiverORM.type_entity == type_entity)
-
-        if state:
-            filters.append(
-                (
-                    select(AddressORM.id)
-                    .where(
-                        and_(
-                            AddressORM.receiver_id == ReceiverORM.id,
-                            func.upper(AddressORM.state) == state
-                        )
-                    ).exists()
-                )
-            )
+        stmt = self._base_stmt()
+        filters = self._build_filters(search, type_entity, state)
         if filters:
             stmt = stmt.where(
                 and_(*filters)
             )
 
-        count_stmt = select(func.count()).select_from(ReceiverORM)
-        if filters:
-            count_stmt = count_stmt.where(and_(*filters))
-        total = self._db.scalar(count_stmt) or 0
+        total = self._count(filters)
         total_pages = ceil(total/limit) if total > 0 else 0
         current_page = 1 if total_pages == 0 else min(page, total_pages)
         offset = (current_page - 1) * limit
 
-        if order_by == "full_name":
-            order_col = func.upper(ReceiverORM.full_name)
-        elif order_by == "name_org":
-            org_name = (
-                select(OrganizationORM.name)
-                .join(PositionORM, PositionORM.organization_id == OrganizationORM.id)
-                .where(PositionORM.id == ReceiverORM.position_id)
-                .scalar_subquery()
-            )
-            order_col = func.upper(org_name)
-        elif order_by == "created_at":
-            order_col = ReceiverORM.created_at
-        else:
-            order_col = ReceiverORM.id
-
-
-        order_primary = order_col.asc() if direction == "asc" else order_col.desc()
-        if order_by == "id":
-            stmt = stmt.order_by(order_primary)
-        else:
-            order_secondary = (
-                ReceiverORM.id.asc() if direction == "asc" else ReceiverORM.id.desc()
-            )
-            stmt = stmt.order_by(
-                order_primary,
-                order_secondary
-            )
+        stmt = self._apply_order(order_by, direction, stmt)
         stmt = stmt.limit(limit).offset(offset)
         items = list(
             self._db.scalars(stmt).unique().all()
@@ -224,6 +152,97 @@ class ReceiverRepositoryImpl(ReceiverRepository):
                 ReceiverORM.position_id == position_id,
             )
         ).scalar_one_or_none()
+    
+    def _base_stmt(self):
+        return (
+            select(ReceiverORM)
+            .options(
+                selectinload(ReceiverORM.addresses),
+                joinedload(ReceiverORM.title),
+                joinedload(ReceiverORM.position).joinedload(PositionORM.job_role),
+                joinedload(ReceiverORM.position).joinedload(PositionORM.organization),
+                selectinload(ReceiverORM.contacts),
+                selectinload(ReceiverORM.volantes)
+            )
+        )
+
+    def _build_filters(self,
+                       search: str | None,
+                       type_entity: EntidadesEnum | None,
+                       state: str | None) -> list:
+
+        filters: list = []
+
+        if search:
+            filters.append(
+                or_(
+                    func.upper(ReceiverORM.full_name).like(f"%{search}%"),
+                    (
+                        select(PositionORM.id)
+                        .join(
+                            OrganizationORM,
+                            OrganizationORM.id == PositionORM.organization_id
+                        ).where(
+                            PositionORM.id == ReceiverORM.position_id,
+                            func.upper(OrganizationORM.name).like(f"%{search}%")
+                        ).exists()
+                    )
+
+                )
+            )
+
+        if type_entity:
+            filters.append(ReceiverORM.type_entity == type_entity)
+
+        if state:
+            filters.append(
+                (
+                    select(AddressORM.id)
+                    .where(
+                        and_(
+                            AddressORM.receiver_id == ReceiverORM.id,
+                            func.upper(AddressORM.state) == state
+                        )
+                    ).exists()
+                )
+            )
+        return filters
+
+    def _count(self, filters: list | None) -> int:
+        count_stmt = select(func.count()).select_from(ReceiverORM)
+        if filters:
+            count_stmt = count_stmt.where(and_(*filters))
+        return self._db.scalar(count_stmt) or 0
+
+    def _apply_order(self, order_by: str, direction: str, stmt):
+        if order_by == "full_name":
+            order_col = func.upper(ReceiverORM.full_name)
+        elif order_by == "name_org":
+            org_name = (
+                select(OrganizationORM.name)
+                .join(PositionORM, PositionORM.organization_id == OrganizationORM.id)
+                .where(PositionORM.id == ReceiverORM.position_id)
+                .scalar_subquery()
+            )
+            order_col = func.upper(org_name)
+        elif order_by == "created_at":
+            order_col = ReceiverORM.created_at
+        else:
+            order_col = ReceiverORM.id
+
+        order_primary = order_col.asc() if direction == "asc" else order_col.desc()
+        if order_by == "id":
+            return stmt.order_by(order_primary)
+        else:
+            order_secondary = (
+                ReceiverORM.id.asc() if direction == "asc" else ReceiverORM.id.desc()
+            )
+            return stmt.order_by(
+                order_primary,
+                order_secondary
+            )
+
+
 
     def find_by_id(self, receiver_id: int) -> ReceiverORM | None:
         return self._db.get(ReceiverORM, receiver_id)
