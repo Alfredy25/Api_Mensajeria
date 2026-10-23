@@ -94,7 +94,11 @@ class ReceiverRepositoryImpl(ReceiverRepository):
             self._db.scalars(stmt).unique().all()
         )
 
-        return {"total": int(total), "total_pages": int(total_pages),"current_page": int(current_page)}, items
+        return {
+            "total": int(total),
+            "total_pages": int(total_pages),
+            "current_page": int(current_page)
+        }, items
 
 
     def create(self, type_entity: EntidadesEnum, full_name: str | None,

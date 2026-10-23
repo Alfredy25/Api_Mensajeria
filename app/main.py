@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.api.v1.receiver.router import router as receiver_router
 from app.api.v1.title.router import router as title_router
+from app.api.v1.volante.router import router as volante_router
 
 app = FastAPI(
     title="API Mensajeria",
@@ -8,6 +9,7 @@ app = FastAPI(
 
 app.include_router(receiver_router)
 app.include_router(title_router)
+app.include_router(volante_router)
 
 @app.get("/")
 def root():
