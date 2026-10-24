@@ -83,7 +83,6 @@ def test_persona_minima_valida() -> None:
         "address": base_address(),
     }
     model = ReceiverCreate(**payload)
-    print(model)
     assert model.type_entity == EntidadesEnum.PERSONA
 
 def test_persona_con_full_name_invalido() -> None:
@@ -112,7 +111,7 @@ def test_persona_con_organizacion_y_cargo_valido() -> None:
         "contact": base_contact()
     }
     model = ReceiverCreate(**payload)
-    print(f"\nPersona con organizacion y cargo valido\n{model}")
+    print(f"\nPersona con organizacion y cargo valido")
     assert model.type_entity == EntidadesEnum.PERSONA
 
 def test_persona_con_organizacion_sin_cargo_valido() -> None:
@@ -125,7 +124,7 @@ def test_persona_con_organizacion_sin_cargo_valido() -> None:
         "position": base_position_sin_job(),
     }
      model = ReceiverCreate(**payload)
-     print(f"\nPersona con organizacion y sin cargo valido\n{model}")
+     print(f"\nPersona con organizacion y sin cargo valido")
      assert model.type_entity == EntidadesEnum.PERSONA
 
 def test_persona_full_name_vacio_invalido() -> None:
@@ -161,7 +160,7 @@ def test_gobierno_con_organizacion_y_sin_cargo_valido() -> None:
         "position": base_position_sin_job(),
     }
     model = ReceiverCreate(**payload)
-    print(f"\nGobierno con organizacion y sin cargo valido\n{model}")
+    print(f"\nGobierno con organizacion y sin cargo valido")
     assert model.type_entity == EntidadesEnum.GOBIERNO
 
 def test_privada_minima_valida() -> None:
