@@ -10,10 +10,10 @@ class VolanteDto(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class VolanteCreate(BaseModel):
-    name: str = Field(..., min_length=19, max_length=35, examples=["VCS-26-131000-00167"])
+    name: str = Field(..., min_length=18, max_length=35, examples=["VCS-26-131000-00167"])
 
 class VolanteUpdate(BaseModel):
-    name: str = Field(..., min_length=19, max_length=35, examples=["VCS-26-131000-00167"])
+    name: str = Field(..., min_length=18, max_length=35, examples=["VCS-26-131000-00167"])
 
 class PaginatedVolantes(BaseModel):
     search: str | None

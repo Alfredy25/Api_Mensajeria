@@ -38,7 +38,7 @@ def update_volante(volante_id: int = Path(...,
                                           ge=1,
                                           title="Id del volante a actualizar",
                                           description="Identificador entero del volante debe ser mayor o igual a 1",
-                                          example=1),
+                                          examples=[1,3,20]),
                    data: VolanteUpdate = Body(..., description="json del volante a actualizar"),
                    service: VolanteService = Depends(get_volante_service),):
     return service.update_volante(volante_id, data)

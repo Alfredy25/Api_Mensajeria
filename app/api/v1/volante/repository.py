@@ -32,7 +32,7 @@ class VolanteRepository(ABC):
         ...
 
     @abstractmethod
-    def get_by_name(self, abbreviation: str) -> VolanteORM | None:
+    def get_by_name(self, name: str) -> VolanteORM | None:
         ...
 
 class VolanteRepositoryImpl(VolanteRepository):

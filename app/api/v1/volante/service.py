@@ -60,30 +60,17 @@ class VolanteService:
         except SQLAlchemyError as e:
             self._db.rollback()
             raise
-
-    def get_by_name(self, name: str) -> VolanteDto:
-        volante_orm = self._repo.get_by_name(name)
-        if not volante_orm:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Volante no existe"
-            )
-        return VolanteDto.model_validate(volante_orm, from_attributes=True)
-
-    def get_by_id(self, volante_id: int) -> VolanteDto:
-        volante_orm = self._repo.find_by_id(volante_id)
-        if not volante_orm:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Volante no existe"
-            )
-        return VolanteDto.model_validate(volante_orm, from_attributes=True)
+        
 
     def update_volante(self, volante_id: int, volante: VolanteUpdate):
         volante_orm = self._repo.find_by_id(volante_id)
         if not volante_orm:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Volante no existe")
         updates = volante.model_dump()
+        updates["name"] = updates.get("name").strip().upper()
+        existing = self._repo.get_by_name(updates.get("name"))
+        if existing:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="name de volante ya existe")
         try:
             volante_orm = self._repo.update(volante_orm, updates)
             self._db.commit()
