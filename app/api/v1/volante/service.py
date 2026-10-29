@@ -24,9 +24,9 @@ class VolanteService:
             search_find, page, page_size, order_by, direction
         )
 
-        total = totals.get("total")
-        total_pages = totals.get("total_pages")
-        current_page = totals.get("current_page")
+        total = totals.total
+        total_pages = totals.total_pages
+        current_page = totals.current_page
 
         has_prev = current_page > 1 and total > 0
         has_next = current_page < total_pages if total_pages > 0 else False

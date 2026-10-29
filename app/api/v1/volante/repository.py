@@ -5,6 +5,7 @@ from typing import Any
 from sqlalchemy import select, func, Select
 from sqlalchemy.orm import Session
 
+from app.api.v1.volante.schemas import TotalsVolantes
 from app.models import VolanteORM
 
 
@@ -16,7 +17,7 @@ class VolanteRepository(ABC):
                  page: int,
                  page_size: int,
                  order_by: str,
-                 direction) -> tuple[dict[str, Any], list[VolanteORM]]:
+                 direction) -> tuple[TotalsVolantes, list[VolanteORM]]:
         ...
 
     @abstractmethod
@@ -45,16 +46,17 @@ class VolanteRepositoryImpl(VolanteRepository):
                  page: int,
                  page_size: int,
                  order_by: str,
-                 direction) -> tuple[dict[str, Any], list[VolanteORM]]:
+                 direction) -> tuple[TotalsVolantes, list[VolanteORM]]:
 
         stmt = (select(VolanteORM))
         if search:
             stmt = stmt.where(VolanteORM.name.like(f"%{search}%"))
 
         total = self._get_total(search)
-        total_pages, current_page, offset = self._calculate_totals(
+        totals = self._calculate_totals(
             total, page_size, page
         )
+        offset = totals.offset
 
         stmt = self._apply_order(order_by, direction, stmt)
         volantes =  list(
@@ -62,12 +64,6 @@ class VolanteRepositoryImpl(VolanteRepository):
                 stmt.offset(offset).limit(page_size)
             ).all()
         )
-
-        totals = {
-            "total": int(total),
-            "total_pages": int(total_pages),
-            "current_page": int(current_page)
-        }
 
         return totals, volantes
 
@@ -81,11 +77,16 @@ class VolanteRepositoryImpl(VolanteRepository):
         return self._db.scalar(total_count) or 0
 
     @staticmethod
-    def _calculate_totals(total: int, page_size: int, page: int) -> tuple[int, int, int]:
+    def _calculate_totals(total: int, page_size: int, page: int) -> TotalsVolantes:
         total_pages = ceil(total / page_size) if total else 0
         current_page = 1 if total_pages == 0 else min(page, total_pages)
         offset = (current_page - 1) * page_size
-        return total_pages, current_page, offset
+        return TotalsVolantes(
+            total=total,
+            total_pages=total_pages,
+            current_page=current_page,
+            offset=offset
+        )
 
     @staticmethod
     def _apply_order(order_by: str, direction: str, stmt: 'Select') -> 'Select':

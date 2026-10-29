@@ -15,7 +15,7 @@ def get_volantes(
             max_length=50,
             min_length=3,
             pattern=r"^[A-Za-z0-9\-]+$",
-            description="Texto para buscar con patron",
+            description="Texto para buscar volantes por su name",
             examples=["VSC-26", "131000", "-00210", "131000-", "167"],
         ),
         page: int = Query(default=1, ge=1, le=100, description="pagina solicitada"),

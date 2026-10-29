@@ -25,3 +25,10 @@ class PaginatedVolantes(BaseModel):
     has_next: bool
     items: List[VolanteDto] = Field(default_factory=list)
 
+class TotalsVolantes(BaseModel):
+    total: int
+    total_pages: int
+    current_page: int
+    offset: int
+
+    model_config = ConfigDict(from_attributes=True)
