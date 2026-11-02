@@ -19,17 +19,37 @@ STREET_ABBREVIATIONS = {
     "AV": "AV.",
     "BOULEVARD": "BLVD.",
     "CARRETERA": "CARR.",
-    "SIN NÚMERO": "SN",
-    "SIN NUMERO": "SN",
+    "SIN NÚMERO": "SN.",
+    "SIN NUMERO": "SN.",
     "S/N": "SN",
     "NUMERO": "NUM.",
-    "NÚMERO": "NUM",
+    "NÚMERO": "NUM.",
     "EDIFICIO": "EDIF.",
     "KILOMETRO": "KM.",
-    "KM": "KM.",
-    ",": ""
+    "KM": "KM."
 }
 
+special_characters = {
+    "\\": "",
+    ":": "",
+    "[": "",
+    "]": "",
+    "#": "",
+    "°": "",
+    "-": " ",
+    '"': "",
+    ",": "",
+    "!": "",
+    "¿": "",
+    "¡": "",
+    "“": "",
+    "”": "",
+}
+
+def replace_special_characters(text: str) -> str:
+    for key, value in special_characters.items():
+        text = text.replace(key, value)
+    return text
 
 def normalize_text(value: str) -> str:
     return value.strip().upper().translate(_VOWEL_ACCENTS)
@@ -53,11 +73,12 @@ def replace_whole_words(value: str) -> str:
 
     pattern = re.compile(regex)
 
-
-    return pattern.sub(
+    text = pattern.sub(
         lambda match: STREET_ABBREVIATIONS[match.group(0)],
         value
     )
+
+    return replace_special_characters(text)
 
 def normalize_state(value: object) -> object:
     if isinstance(value, str):
@@ -182,7 +203,9 @@ class AddressCreate(BaseModel):
         mode="before",
     )
     @classmethod
-    def normalize_address(cls, value):
+    def normalize_address(cls, value) -> str | None:
+        if value is None:
+            return None
         value = normalize_text_fields(value)
         return replace_whole_words(value)
 

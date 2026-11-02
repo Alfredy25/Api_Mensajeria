@@ -15,6 +15,16 @@ from app.api.v1.address.schemas import (
 )
 from app.models import AddressORM
 
+_DUPLICATE_KEY_FIELDS = (
+    "street",
+    "colony",
+    "postal_code",
+    "municipality",
+    "city",
+    "state",
+    "country",
+)
+
 
 class AddressService:
 
@@ -22,9 +32,16 @@ class AddressService:
         self._repo = repo
         self._db = db
 
-    def create_address(self, receiver_id: int, address_create: AddressCreate) -> AddressDto:
+    def create_address(
+        self,
+        receiver_id: int,
+        address_create: AddressCreate,
+    ) -> AddressDto:
         self._require_receiver(receiver_id)
-        self._reject_duplicate(receiver_id, address_create)
+        self._reject_duplicate(
+            receiver_id,
+            self._duplicate_key(address_create),
+        )
 
         created = self._repo.create(
             self._to_address_orm(address_create, receiver_id)
@@ -40,20 +57,71 @@ class AddressService:
             detail=f"Destinatario con id {receiver_id} no existe",
         )
 
-    def _reject_duplicate(self,
-                          receiver_id: int,
-                          address_create: AddressCreate) -> None:
-        addresses = self._repo.list_by_receiver(receiver_id)
+    def _reject_duplicate(
+        self,
+        receiver_id: int,
+        incoming_key: tuple[str, ...],
+    ) -> None:
+        duplicates = self._find_duplicates(receiver_id, incoming_key)
+        if duplicates:
+            self._raise_duplicate(duplicates[0].id)
 
-        for address in addresses:
-            if self._same_address(address, address_create):
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail={
-                        "msg": "El destinatario ya tiene un domicilio equivalente",
-                        "address_id": address.id,
-                    },
-                )
+    def _find_duplicates(
+        self,
+        receiver_id: int,
+        incoming_key: tuple[str, ...],
+    ) -> list[AddressORM]:
+        return [
+            address
+            for address in self._repo.list_by_receiver(receiver_id)
+            if self._duplicate_key(address) == incoming_key
+        ]
+
+    @staticmethod
+    def _duplicate_key(
+        address: AddressORM | AddressCreate,
+    ) -> tuple[str, ...]:
+        return tuple(
+            normalize_text(getattr(address, field_name))
+            for field_name in _DUPLICATE_KEY_FIELDS
+        )
+
+    @staticmethod
+    def _raise_duplicate(address_id: int) -> None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "msg": "El destinatario ya tiene un domicilio equivalente",
+                "address_id": address_id,
+            },
+        )
+
+    @staticmethod
+    def _to_address_orm(
+        address: AddressCreate,
+        receiver_id: int | None = None,
+    ) -> AddressORM:
+        return AddressORM(
+            street=address.street,
+            num_street=address.num_street,
+            colony=address.colony,
+            municipality=address.municipality,
+            city=address.city,
+            state=address.state,
+            postal_code=address.postal_code,
+            country=address.country,
+            address_reference=address.address_reference,
+            receiver_id=receiver_id,
+        )
+
+    def _commit(self, address: AddressORM) -> AddressDto:
+        try:
+            self._db.commit()
+            self._db.refresh(address)
+            return AddressDto.model_validate(address)
+        except SQLAlchemyError:
+            self._db.rollback()
+            raise
 
     def list_addresses(
         self,
@@ -104,6 +172,18 @@ class AddressService:
         address_update: AddressUpdate,
         address_id: int,
     ) -> AddressDto:
+        address = self._find_address(address_id)
+
+        incoming_key = self._duplicate_key_after_update(
+            address,
+            address_update,
+        )
+        self._reject_duplicate_of_another(address, incoming_key)
+
+        updated = self._repo.update(address, address_update)
+        return self._commit(updated)
+
+    def _find_address(self, address_id: int) -> AddressORM:
         address = self._repo.find_by_id(address_id)
         if address is None:
             raise HTTPException(
@@ -111,57 +191,57 @@ class AddressService:
                 detail=f"Domicilio con id {address_id} no existe",
             )
 
-        updated = self._repo.update(address, address_update)
-        return self._commit(updated)
+        return address
 
+    @staticmethod
+    def _duplicate_key_after_update(
+        current: AddressORM,
+        address_update: AddressUpdate,
+    ) -> tuple[str, ...]:
+        changes: dict[str, str | None] = address_update.model_dump(
+            exclude_unset=True,
+        )
+        values: list[str] = []
+
+        for field_name in _DUPLICATE_KEY_FIELDS:
+            value = AddressService._incoming_or_current(
+                current,
+                changes,
+                field_name,
+            )
+            values.append(normalize_text(value))
+
+        return tuple(values)
+
+    @staticmethod
+    def _incoming_or_current(
+        current: AddressORM,
+        changes: dict[str, str | None],
+        field_name: str,
+    ) -> str:
+        incoming = changes.get(field_name)
+        if incoming is None:
+            return getattr(current, field_name)
+
+        return incoming
+
+    def _reject_duplicate_of_another(
+        self,
+        current: AddressORM,
+        incoming_key: tuple[str, ...],
+    ) -> None:
+        duplicates = self._find_duplicates(
+            current.receiver_id,
+            incoming_key,
+        )
+        other_duplicates = [
+            address for address in duplicates if address.id != current.id
+        ]
+        if other_duplicates:
+            self._raise_duplicate(other_duplicates[0].id)
 
     def create_address_with_receiver(
-            self, address_create: AddressCreate
+        self,
+        address_create: AddressCreate,
     ) -> AddressORM:
-        # El destinatario asigna receiver_id al hacer append, en su transacción.
         return self._to_address_orm(address_create)
-
-    def _commit(self, address: AddressORM) -> AddressDto:
-        try:
-            self._db.commit()
-            self._db.refresh(address)
-            return AddressDto.model_validate(address)
-        except SQLAlchemyError:
-            self._db.rollback()
-            raise
-
-    @staticmethod
-    def _to_address_orm(
-            address: AddressCreate, receiver_id: int | None = None
-    ) -> AddressORM:
-        return AddressORM(
-        street = address.street,
-        num_street = address.num_street,
-        colony = address.colony,
-        municipality = address.municipality,
-        city = address.city,
-        state = address.state,
-        postal_code = address.postal_code,
-        country = address.country,
-        address_reference = address.address_reference,
-        receiver_id=receiver_id,
-)
-
-
-    def _same_address(self, current: AddressORM, incoming: AddressCreate) -> bool:
-        return self._address_key(current) == self._address_key(incoming)
-
-    @staticmethod
-    def _address_key(
-            address: AddressORM | AddressCreate
-    ) -> tuple[str, str, str, str, str, str, str]:
-        # Número de calle y referencia no identifican el domicilio.
-        return (
-            normalize_text(address.street),
-            normalize_text(address.colony),
-            normalize_text(address.postal_code),
-            normalize_text(address.municipality),
-            normalize_text(address.city),
-            normalize_text(address.state),
-            normalize_text(address.country),
-        )

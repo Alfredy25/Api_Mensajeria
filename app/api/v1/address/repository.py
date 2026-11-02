@@ -5,7 +5,6 @@ from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.api.v1.address.schemas import AddressUpdate, TotalsAddresses
-from app.core.db import SessionLocal
 from app.models import AddressORM, ReceiverORM
 
 
@@ -159,11 +158,4 @@ class AddressRepositoryImpl(AddressRepository):
 
         return stmt.order_by(column.desc())
 
-
-if __name__ == '__main__':
-    with SessionLocal() as session:
-        repo = AddressRepositoryImpl(db=session)
-        receiver_id = 2
-        receiver = repo.receiver_exists(receiver_id)
-        print("Hola")
 
