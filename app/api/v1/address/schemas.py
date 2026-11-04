@@ -16,7 +16,6 @@ _VOWEL_ACCENTS = str.maketrans({
 STREET_ABBREVIATIONS = {
     "CALLE": "C.",
     "AVENIDA": "AV.",
-    "AV": "AV.",
     "BOULEVARD": "BLVD.",
     "CARRETERA": "CARR.",
     "SIN NÚMERO": "SN.",
@@ -26,7 +25,6 @@ STREET_ABBREVIATIONS = {
     "NÚMERO": "NUM.",
     "EDIFICIO": "EDIF.",
     "KILOMETRO": "KM.",
-    "KM": "KM."
 }
 
 special_characters = {
@@ -175,10 +173,10 @@ class AddressCreate(BaseModel):
     state: MexicanStateField = Field(
         ...,
         description="Estado de la republica mexicana",
-        examples=["JALISCO"],
+        examples=["JALISCO", "PUEBLA"],
     )
     postal_code: str = Field(..., min_length=4, max_length=5)
-    country: str = Field(..., min_length=3, max_length=50)
+    country: str = Field(..., min_length=3, max_length=50, examples=["MEXICO"])
     address_reference: Optional[str] = Field(default=None, max_length=50)
 
     @field_validator(
