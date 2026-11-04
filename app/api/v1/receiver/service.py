@@ -1,10 +1,8 @@
-from math import ceil
-from typing import Optional, Literal, List
+from typing import Literal
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, func, and_, or_
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session, selectinload, joinedload
+from sqlalchemy.orm import Session
 
 from app.api.v1.address.service import AddressService
 from app.api.v1.contact.service import ContactService
@@ -17,7 +15,7 @@ from app.api.v1.receiver.repository import ReceiverRepository
 from app.api.v1.receiver.schemas import ReceiverCreate, ReceiverDto, PaginatedReceiver
 from app.api.v1.title.service import TitleService
 from app.api.v1.volante.service import VolanteService
-from app.models import EntidadesEnum, TitleORM, PositionORM, ReceiverORM, AddressORM
+from app.models import EntidadesEnum, TitleORM, PositionORM
 
 # Cargos genéricos reutilizables por tipo de destinatario
 SIN_CARGO = JobCreate(
@@ -32,44 +30,6 @@ INSTITUCIONAL_PRIVADO = JobCreate(
     abbreviation="INSTITUCIONAL PRIVADO",
     meaning="Destinatario dirigido a institución privada",
 )
-
-# from enum import StrEnum
-#
-#
-# class Estates(str, StrEnum):
-#     CIUDAD_DE_MEXICO = "CIUDAD DE MÉXICO"
-#     AGUASCALIENTES = "AGUASCALIENTES"
-#     COAHUILA = "COAHUILA"
-#     BAJA_CALIFORNIA = "BAJA CALIFORNIA"
-#     BAJA_CALIFORNIA_SUR = "BAJA CALIFORNIA SUR"
-#     CAMPECHE = "CAMPECHE"
-#     COLIMA = "COLIMA"
-#     CHIAPAS = "CHIAPAS"
-#     CHIHUAHUA = "CHIHUAHUA"
-#     DURANGO = "DURANGO"
-#     GUANAJUATO = "GUANAJUATO"
-#     GUERRERO = "GUERRERO"
-#     HIDALGO = "HIDALGO"
-#     JALISCO = "JALISCO"
-#     ESTADO_DE_MEXICO = "ESTADO DE MÉXICO"
-#     MICHOACAN = "MICHOACÁN"
-#     MORELOS = "MORELOS"
-#     NAYARIT = "NAYARIT"
-#     NUEVO_LEON = "NUEVO LEÓN"
-#     OAXACA = "OAXACA"
-#     PUEBLA = "PUEBLA"
-#     QUERETARO = "QUERÉTARO"
-#     QUINTANA_ROO = "QUINTANA ROO"
-#     SAN_LUIS_POTOSI = "SAN LUIS POTOSÍ"
-#     SINALOA = "SINALOA"
-#     SONORA = "SONORA"
-#     TABASCO = "TABASCO"
-#     TAMAULIPAS = "TAMAULIPAS"
-#     TLAXCALA = "TLAXCALA"
-#     VERACRUZ = "VERACRUZ"
-#     YUCATAN = "YUCATÁN"
-#     ZACATECAS = "ZACATECAS"
-
 
 
 class ReceiverService:
@@ -267,14 +227,12 @@ class ReceiverService:
 
     @staticmethod
     def _normalize_full_name(full_name: str | None) -> str | None:
-        """Elimina espacios exteriores y convierte a mayúsculas."""
         if full_name is None:
             return None
         return full_name.strip().upper()
 
     @staticmethod
     def _normalize_email(email: str | None) -> str | None:
-        """Elimina espacios exteriores y convierte a minúsculas."""
         if email is None:
             return None
         return str(email).strip().lower()

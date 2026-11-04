@@ -69,7 +69,6 @@ class ContactService:
     def _duplicate_key(
         phone: str | None, ext: str | None,
     ) -> tuple[str, str | None]:
-        # Extensión vacía vale None: en MySQL un UNIQUE no agrupa los NULL.
         normalized_phone = phone.strip() if phone else ""
         normalized_ext = ext.strip() if ext else None
         return normalized_phone, normalized_ext or None
@@ -176,7 +175,6 @@ class ContactService:
         changes: dict[str, str | None],
         field_name: str,
     ) -> str | None:
-        # La extensión ausente conserva el valor actual; null explícito la limpia.
         if field_name not in changes:
             return getattr(current, field_name)
 

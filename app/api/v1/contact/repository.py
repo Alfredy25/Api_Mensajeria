@@ -60,7 +60,6 @@ class ContactRepositoryImpl(ContactRepository):
         return self._db.get(ContactORM, contact_id)
 
     def receiver_exists(self, receiver_id: int) -> bool:
-        # Session.get carga título, puesto, domicilios y contactos.
         stmt = select(ReceiverORM.id).where(ReceiverORM.id == receiver_id)
         receiver_find = self._db.scalar(stmt)
         return receiver_find is not None
