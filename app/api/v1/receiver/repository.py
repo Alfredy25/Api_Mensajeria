@@ -25,8 +25,14 @@ class ReceiverRepository(ABC):
         ...
 
     @abstractmethod
-    def find_duplicate(self, type_entity: EntidadesEnum, full_name: str | None,
-                       position_id: int | None) -> ReceiverORM | None:
+    def find_duplicate(
+        self,
+        type_entity: EntidadesEnum,
+        full_name: str | None,
+        position_id: int | None,
+        title_id: int | None = None,
+        exclude_id: int | None = None,
+    ) -> ReceiverORM | None:
         ...
 
     @abstractmethod
@@ -94,7 +100,11 @@ class ReceiverRepositoryImpl(ReceiverRepository):
             self._db.scalars(stmt).unique().all()
         )
 
-        return {"total": int(total), "total_pages": int(total_pages),"current_page": int(current_page)}, items
+        return {
+            "total": int(total),
+            "total_pages": int(total_pages),
+            "current_page": int(current_page)
+        }, items
 
 
     def create(self, type_entity: EntidadesEnum, full_name: str | None,
@@ -112,46 +122,79 @@ class ReceiverRepositoryImpl(ReceiverRepository):
         self._db.flush()
         return receiver
 
-    def find_duplicate(self, type_entity: EntidadesEnum,  full_name: str | None
-                       , position_id: int | None) -> ReceiverORM | None:
-        """Busca un destinatario duplicado según la identidad lógica del tipo."""
+    def find_duplicate(
+        self,
+        type_entity: EntidadesEnum,
+        full_name: str | None,
+        position_id: int | None,
+        title_id: int | None = None,
+        exclude_id: int | None = None,
+    ) -> ReceiverORM | None:
         if type_entity == EntidadesEnum.PERSONA:
             return self._find_duplicate_persona(
                 full_name=full_name,
                 position_id=position_id,
+                title_id=title_id,
+                exclude_id=exclude_id,
             )
         return self._find_duplicate_institution(
             type_entity=type_entity,
             position_id=position_id,
+            exclude_id=exclude_id,
         )
 
-    def _find_duplicate_persona(self, full_name: str,
-                                position_id: int | None) -> ReceiverORM | None:
-        """PERSONA: type_entity + full_name(upper) + title_id + position_id."""
-        filters = [ReceiverORM.type_entity == EntidadesEnum.PERSONA,
-                   func.upper(ReceiverORM.full_name) == full_name.upper()]
+    def _find_duplicate_persona(
+        self,
+        full_name: str,
+        position_id: int | None,
+        title_id: int | None,
+        exclude_id: int | None,
+    ) -> ReceiverORM | None:
+        if not full_name:
+            return None
+
+        filters = [
+            ReceiverORM.type_entity == EntidadesEnum.PERSONA,
+            func.upper(ReceiverORM.full_name) == full_name.upper(),
+        ]
+        filters.extend(self._exclude_current(exclude_id))
 
         if position_id is not None:
             filters.append(ReceiverORM.position_id == position_id)
         else:
             filters.append(ReceiverORM.position_id.is_(None))
+            filters.append(self._same_title(title_id))
 
         return self._db.execute(
-            select(ReceiverORM).where(
-                and_(
-                    *filters)
-            )
+            select(ReceiverORM).where(and_(*filters))
         ).scalar_one_or_none()
 
-    def _find_duplicate_institution(self, type_entity: EntidadesEnum,
-                                    position_id: int | None) -> ReceiverORM | None:
-        """GOBIERNO / PRIVADA: type_entity + position_id."""
+    def _find_duplicate_institution(
+        self,
+        type_entity: EntidadesEnum,
+        position_id: int | None,
+        exclude_id: int | None,
+    ) -> ReceiverORM | None:
+        filters = [
+            ReceiverORM.type_entity == type_entity,
+            ReceiverORM.position_id == position_id,
+        ]
+        filters.extend(self._exclude_current(exclude_id))
         return self._db.execute(
-            select(ReceiverORM).where(
-                ReceiverORM.type_entity == type_entity,
-                ReceiverORM.position_id == position_id,
-            )
+            select(ReceiverORM).where(and_(*filters))
         ).scalar_one_or_none()
+
+    @staticmethod
+    def _exclude_current(exclude_id: int | None) -> list:
+        if exclude_id is None:
+            return []
+        return [ReceiverORM.id != exclude_id]
+
+    @staticmethod
+    def _same_title(title_id: int | None):
+        if title_id is None:
+            return ReceiverORM.title_id.is_(None)
+        return ReceiverORM.title_id == title_id
     
     def _base_stmt(self):
         return (

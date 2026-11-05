@@ -1,10 +1,8 @@
-from math import ceil
-from typing import Optional, Literal, List
+from typing import Literal
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, func, and_, or_
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session, selectinload, joinedload
+from sqlalchemy.orm import Session
 
 from app.api.v1.address.service import AddressService
 from app.api.v1.contact.service import ContactService
@@ -12,12 +10,18 @@ from app.api.v1.job_role.schemas import JobCreate
 from app.api.v1.job_role.service import JobService
 from app.api.v1.organization.schemas import OrganizationCreate
 from app.api.v1.organization.service import OrganizationService
+from app.api.v1.position.schemas import PositionCreateWithReceiver
 from app.api.v1.position.service import PositionService
 from app.api.v1.receiver.repository import ReceiverRepository
-from app.api.v1.receiver.schemas import ReceiverCreate, ReceiverDto, PaginatedReceiver
+from app.api.v1.receiver.schemas import (
+    PaginatedReceiver,
+    ReceiverCreate,
+    ReceiverDto,
+    ReceiverUpdate,
+)
 from app.api.v1.title.service import TitleService
 from app.api.v1.volante.service import VolanteService
-from app.models import EntidadesEnum, TitleORM, PositionORM, ReceiverORM, AddressORM
+from app.models import EntidadesEnum, PositionORM, ReceiverORM, TitleORM
 
 # Cargos genéricos reutilizables por tipo de destinatario
 SIN_CARGO = JobCreate(
@@ -32,44 +36,6 @@ INSTITUCIONAL_PRIVADO = JobCreate(
     abbreviation="INSTITUCIONAL PRIVADO",
     meaning="Destinatario dirigido a institución privada",
 )
-
-# from enum import StrEnum
-#
-#
-# class Estates(str, StrEnum):
-#     CIUDAD_DE_MEXICO = "CIUDAD DE MÉXICO"
-#     AGUASCALIENTES = "AGUASCALIENTES"
-#     COAHUILA = "COAHUILA"
-#     BAJA_CALIFORNIA = "BAJA CALIFORNIA"
-#     BAJA_CALIFORNIA_SUR = "BAJA CALIFORNIA SUR"
-#     CAMPECHE = "CAMPECHE"
-#     COLIMA = "COLIMA"
-#     CHIAPAS = "CHIAPAS"
-#     CHIHUAHUA = "CHIHUAHUA"
-#     DURANGO = "DURANGO"
-#     GUANAJUATO = "GUANAJUATO"
-#     GUERRERO = "GUERRERO"
-#     HIDALGO = "HIDALGO"
-#     JALISCO = "JALISCO"
-#     ESTADO_DE_MEXICO = "ESTADO DE MÉXICO"
-#     MICHOACAN = "MICHOACÁN"
-#     MORELOS = "MORELOS"
-#     NAYARIT = "NAYARIT"
-#     NUEVO_LEON = "NUEVO LEÓN"
-#     OAXACA = "OAXACA"
-#     PUEBLA = "PUEBLA"
-#     QUERETARO = "QUERÉTARO"
-#     QUINTANA_ROO = "QUINTANA ROO"
-#     SAN_LUIS_POTOSI = "SAN LUIS POTOSÍ"
-#     SINALOA = "SINALOA"
-#     SONORA = "SONORA"
-#     TABASCO = "TABASCO"
-#     TAMAULIPAS = "TAMAULIPAS"
-#     TLAXCALA = "TLAXCALA"
-#     VERACRUZ = "VERACRUZ"
-#     YUCATAN = "YUCATÁN"
-#     ZACATECAS = "ZACATECAS"
-
 
 
 class ReceiverService:
@@ -102,6 +68,7 @@ class ReceiverService:
             self._check_duplicate(
                 type_entity=payload.type_entity,
                 full_name=full_name,
+                title_id=title_orm.id if title_orm else None,
                 position_id=position_orm.id if position_orm else None,
             )
 
@@ -251,30 +218,199 @@ class ReceiverService:
             job=job_orm, organization=org_orm,
         )
 
-    def _check_duplicate(self, type_entity: EntidadesEnum, full_name: str | None,
-                         position_id: int | None) -> None:
-        """Lanza 409 si ya existe un destinatario con la misma identidad lógica."""
+    def update_receiver(
+        self,
+        receiver_id: int,
+        payload: ReceiverUpdate,
+    ) -> ReceiverDto:
+        receiver = self._find_receiver(receiver_id)
+        try:
+            self._apply_update(receiver, payload)
+            self._db.commit()
+            self._db.refresh(receiver)
+            return ReceiverDto.model_validate(receiver, from_attributes=True)
+        except HTTPException:
+            self._db.rollback()
+            raise
+        except SQLAlchemyError:
+            self._db.rollback()
+            raise
+
+    def _find_receiver(self, receiver_id: int) -> ReceiverORM:
+        receiver = self._repo.find_by_id(receiver_id)
+        if receiver is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Destinatario con id {receiver_id} no existe",
+            )
+        return receiver
+
+    def _apply_update(self, receiver: ReceiverORM, payload: ReceiverUpdate) -> None:
+        fields = payload.model_fields_set
+        current_type = self._entity(receiver.type_entity)
+        target_type = self._target_type(current_type, payload, fields)
+        promoting = (
+            target_type == EntidadesEnum.PERSONA
+            and current_type != EntidadesEnum.PERSONA
+        )
+
+        if promoting:
+            self._require_persona_identity(fields)
+        if target_type != EntidadesEnum.PERSONA:
+            self._reject_persona_fields(fields)
+
+        if "email" in fields:
+            receiver.email = payload.email
+
+        if target_type == EntidadesEnum.PERSONA:
+            self._assign_persona_fields(receiver, payload, fields)
+        elif "position" in fields:
+            self._assign_institution_position(receiver, target_type, payload)
+
+        receiver.type_entity = target_type
+        self._check_duplicate(
+            type_entity=target_type,
+            full_name=receiver.full_name,
+            title_id=receiver.title.id if receiver.title else None,
+            position_id=receiver.position.id if receiver.position else None,
+            exclude_id=receiver.id,
+        )
+
+    def _target_type(
+        self,
+        current_type: EntidadesEnum,
+        payload: ReceiverUpdate,
+        fields: set[str],
+    ) -> EntidadesEnum:
+        if "type_entity" not in fields:
+            return current_type
+
+        requested = payload.type_entity
+        if requested == current_type:
+            return current_type
+        if (
+            requested == EntidadesEnum.PERSONA
+            and current_type != EntidadesEnum.PERSONA
+        ):
+            return EntidadesEnum.PERSONA
+        if current_type == EntidadesEnum.PERSONA:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Una persona no puede cambiar a GOBIERNO o PRIVADA",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No se puede cambiar entre GOBIERNO y PRIVADA",
+        )
+
+    @staticmethod
+    def _require_persona_identity(fields: set[str]) -> None:
+        if "full_name" in fields and "title" in fields:
+            return
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Para pasar a PERSONA se requieren full_name y title",
+        )
+
+    @staticmethod
+    def _reject_persona_fields(fields: set[str]) -> None:
+        if "full_name" not in fields and "title" not in fields:
+            return
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="full_name y title no son permitidos para GOBIERNO o PRIVADA",
+        )
+
+    def _assign_persona_fields(
+        self,
+        receiver: ReceiverORM,
+        payload: ReceiverUpdate,
+        fields: set[str],
+    ) -> None:
+        if "full_name" in fields:
+            receiver.full_name = payload.full_name
+        title = payload.title
+        if "title" in fields and title is not None:
+            receiver.title = self._title_service.ensure_title(title)
+        if "position" not in fields:
+            return
+        if payload.position is None:
+            receiver.position = None
+            return
+
+        job = payload.position.job_role or SIN_CARGO
+        receiver.position = self._ensure_position_from_parts(
+            job_create=job,
+            org_create=payload.position.organization,
+        )
+
+    def _assign_institution_position(
+        self,
+        receiver: ReceiverORM,
+        type_entity: EntidadesEnum,
+        payload: ReceiverUpdate,
+    ) -> None:
+        if payload.position is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="El puesto es requerido para GOBIERNO o PRIVADA",
+            )
+        receiver.position = self._position_for_type(type_entity, payload.position)
+
+    def _position_for_type(
+        self,
+        type_entity: EntidadesEnum,
+        position: PositionCreateWithReceiver,
+    ) -> PositionORM:
+        if position.job_role:
+            job = position.job_role
+        elif type_entity == EntidadesEnum.GOBIERNO:
+            job = INSTITUCIONAL_GOBIERNO
+        else:
+            job = INSTITUCIONAL_PRIVADO
+        return self._ensure_position_from_parts(
+            job_create=job,
+            org_create=position.organization,
+        )
+
+    @staticmethod
+    def _entity(value: EntidadesEnum | str) -> EntidadesEnum:
+        if isinstance(value, EntidadesEnum):
+            return value
+        return EntidadesEnum(value)
+
+    def _check_duplicate(
+        self,
+        type_entity: EntidadesEnum,
+        full_name: str | None,
+        position_id: int | None,
+        title_id: int | None = None,
+        exclude_id: int | None = None,
+    ) -> None:
         existing = self._repo.find_duplicate(
             type_entity=type_entity,
             full_name=full_name,
             position_id=position_id,
+            title_id=title_id,
+            exclude_id=exclude_id,
         )
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={"msg":"El destinatario ya existe", "receiver_id": existing.id},
+                detail={
+                    "msg": "El destinatario ya existe",
+                    "receiver_id": existing.id,
+                },
             )
 
     @staticmethod
     def _normalize_full_name(full_name: str | None) -> str | None:
-        """Elimina espacios exteriores y convierte a mayúsculas."""
         if full_name is None:
             return None
         return full_name.strip().upper()
 
     @staticmethod
     def _normalize_email(email: str | None) -> str | None:
-        """Elimina espacios exteriores y convierte a minúsculas."""
         if email is None:
             return None
         return str(email).strip().lower()

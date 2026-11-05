@@ -1,11 +1,17 @@
 from typing import Optional, Literal, Annotated
 
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Body, Depends, Path, Query, status
+from pydantic import AfterValidator
 
-from app.api.v1.receiver.schemas import ReceiverDto, ReceiverCreate, PaginatedReceiver, normalize_search
+from app.api.v1.receiver.schemas import (
+    PaginatedReceiver,
+    ReceiverCreate,
+    ReceiverDto,
+    ReceiverUpdate,
+    normalize_search,
+)
 from app.api.v1.receiver.service import ReceiverService
 from app.core.dependencies import get_receiver_service
-from pydantic import AfterValidator
 
 router = APIRouter(prefix="/receivers", tags=["receivers"])
 
@@ -62,3 +68,20 @@ def list_receivers(
         type_entity=type_entity,
         state=state,
     )
+
+
+@router.patch("/{receiver_id}", response_model=ReceiverDto)
+def update_receiver(
+    receiver_id: int = Path(
+        ...,
+        ge=1,
+        description="Identificador del destinatario a actualizar",
+        examples=[1],
+    ),
+    payload: ReceiverUpdate = Body(
+        ...,
+        description="Campos del destinatario a actualizar",
+    ),
+    service: ReceiverService = Depends(get_receiver_service),
+) -> ReceiverDto:
+    return service.update_receiver(receiver_id, payload)
