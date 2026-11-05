@@ -1,6 +1,6 @@
 from typing import List, Optional, Self, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 from pydantic_core import PydanticCustomError
 
 from app.api.v1.address.schemas import AddressCreate, AddressDto
@@ -63,10 +63,43 @@ class ReceiverCreate(BaseModel):
                 
 
 class ReceiverUpdate(BaseModel):
+    full_name: Optional[str] = Field(default=None, min_length=5, max_length=70)
+    email: Optional[EmailStr] = Field(default=None, max_length=80)
+    title: Optional[TitleCreate] = None
+    position: Optional[PositionCreateWithReceiver] = None
     type_entity: Optional[EntidadesEnum] = None
-    title: Optional[TitleDto] = None
-    full_name: Optional[str] = None
-    email: Optional[str] = None
+
+    @field_validator("full_name", mode="before")
+    @classmethod
+    def normalize_full_name(cls, value: object) -> object:
+        if value is None:
+            raise ValueError("El nombre no puede ser nulo")
+        if isinstance(value, str):
+            return value.strip().upper()
+        return value
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, value: object) -> object:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return value.strip().lower()
+        return value
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def reject_null_title(cls, value: object) -> object:
+        if value is None:
+            raise ValueError("El título no puede ser nulo")
+        return value
+
+    @field_validator("type_entity", mode="before")
+    @classmethod
+    def reject_null_type(cls, value: object) -> object:
+        if value is None:
+            raise ValueError("El tipo no puede ser nulo")
+        return value
 
 class PaginatedReceiver(BaseModel):
     page:int
