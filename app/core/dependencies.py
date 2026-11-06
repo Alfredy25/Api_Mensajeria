@@ -12,6 +12,7 @@ from app.api.v1.volante.repository import VolanteRepositoryImpl, VolanteReposito
 from app.api.v1.address.repository import AddressRepositoryImpl, AddressRepository
 from app.api.v1.contact.repository import ContactRepositoryImpl, ContactRepository
 from app.api.v1.receiver.repository import ReceiverRepositoryImpl, ReceiverRepository
+from app.api.v1.sepomex.repository import SepomexRepositoryImpl, SepomexRepository
 
 # Services
 from app.api.v1.title.service import TitleService
@@ -22,6 +23,7 @@ from app.api.v1.volante.service import VolanteService
 from app.api.v1.address.service import AddressService
 from app.api.v1.contact.service import ContactService
 from app.api.v1.receiver.service import ReceiverService
+from app.api.v1.sepomex.service import SepomexService
 
 
 # ------------------------------------------------------------------
@@ -70,6 +72,10 @@ def get_contact_repository(db: Session = Depends(get_db)) -> ContactRepository:
 
 def get_receiver_repository(db: Session = Depends(get_db)) -> ReceiverRepository:
     return ReceiverRepositoryImpl(db=db)
+
+
+def get_sepomex_repository(db: Session = Depends(get_db)) -> SepomexRepository:
+    return SepomexRepositoryImpl(db=db)
 
 
 # ------------------------------------------------------------------
@@ -125,6 +131,12 @@ def get_contact_service(
     repo: ContactRepository = Depends(get_contact_repository),
 ) -> ContactService:
     return ContactService(db=db, repo=repo)
+
+
+def get_sepomex_service(
+    repo: SepomexRepository = Depends(get_sepomex_repository),
+) -> SepomexService:
+    return SepomexService(repo=repo)
 
 
 def get_receiver_service(

@@ -6,6 +6,7 @@ from .organization import OrganizationORM
 from .address import AddressORM
 from .contact import ContactORM
 from .volante import VolanteORM
+from .postal_code_sepomex import SepomexORM
 # from .user import UserORM, users_roles
 # from .role import RoleORM, NameRole
 # from .register import RegisterORM, Sede
@@ -13,5 +14,5 @@ from .volante import VolanteORM
 __all__ = [
     "ReceiverORM", "EntidadesEnum", "receiver_volante",
     "PositionORM", "TitleORM", "JobRoleORM", "OrganizationORM",
-    "AddressORM", "ContactORM", "VolanteORM"
+    "AddressORM", "ContactORM", "VolanteORM", "SepomexORM"
 ]

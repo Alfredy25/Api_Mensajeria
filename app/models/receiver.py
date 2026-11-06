@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum as PyEnum
 from sqlalchemy import (Integer, String, Enum as SQLEnum, DateTime, func, ForeignKey,
                         UniqueConstraint, Table, Column)
